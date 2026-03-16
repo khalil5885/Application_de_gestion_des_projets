@@ -13,7 +13,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
-
+import api from '@/api'
 const Register = () => {
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">

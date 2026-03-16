@@ -70,8 +70,8 @@ const AppSidebar = () => {
     >
       <CSidebarHeader className="border-bottom">
         <CSidebarBrand to="/">
-          <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
-          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
+          <span className="sidebar-brand-full fw-bold fs-5 text-white">WebMedia</span>
+          <span className="sidebar-brand-narrow fw-bold text-white">WM</span>
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

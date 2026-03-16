@@ -1,8 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: '', // Vite proxy handles /api/* → http://localhost:8000
-    withCredentials: true,
+    baseURL: 'http://project_manager.test', // Use the full Herd URL
     headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',

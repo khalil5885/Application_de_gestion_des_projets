@@ -44,13 +44,15 @@ export default defineConfig(() => {
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.scss'],
     },
     server: {
-      port: 3000,
-      proxy: {
-        '/api': {
-          target: 'http://localhost:8000',
-          changeOrigin: true,
-        },
-      },
+  port: 3000,
+  proxy: {
+    '/api': {
+      target: 'http://project_manager.test', 
+      changeOrigin: true,
+      secure: false,
+      rewrite: (path) => path, // Ensures the /api prefix is preserved
     },
+  },
+}
   }
 })
