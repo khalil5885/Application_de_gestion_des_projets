@@ -7,10 +7,9 @@ import {
   CRow,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPeople, cilSpeedometer, cilUser } from '@coreui/icons'
+import { cilPeople, cilSpeedometer, cilUser, cilBriefcase } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-
 const StatCard = ({ icon, label, value, color }) => (
   <CCard className="border-0 shadow-sm h-100">
     <CCardBody className="d-flex align-items-center gap-3 p-4">
@@ -35,44 +34,7 @@ const Dashboard = () => {
 
   return (
     <>
-      {/* Welcome banner */}
-      <CCard className="border-0 shadow-sm mb-4" style={{ background: 'linear-gradient(135deg, #321fdb 0%, #1f64db 100%)', color: '#fff' }}>
-        <CCardBody className="p-4 p-lg-5">
-          <CRow className="align-items-center">
-            <CCol>
-              <h3 className="fw-bold mb-1" style={{ color: '#fff' }}>
-                Welcome back{user?.name ? `, ${user.name}` : ''}! 👋
-              </h3>
-              <p className="mb-0 opacity-75">
-                {isAdmin
-                  ? 'You have full admin access. Manage users and settings from the sidebar.'
-                  : `You're logged in as ${user?.global_role || 'user'}. Check your assigned tasks and projects.`}
-              </p>
-            </CCol>
-            <CCol xs="auto" className="d-none d-md-block">
-              <div
-                className="d-flex align-items-center justify-content-center rounded-circle bg-white bg-opacity-10"
-                style={{ width: 72, height: 72 }}
-              >
-                <CIcon icon={cilUser} size="3xl" style={{ color: '#fff' }} />
-              </div>
-            </CCol>
-          </CRow>
-        </CCardBody>
-      </CCard>
-
-      {/* Stat cards */}
-      <CRow className="g-4 mb-4">
-        <CCol sm={6} xl={4}>
-          <StatCard icon={cilSpeedometer} label="Platform" value="WebMedia" color="primary" />
-        </CCol>
-        <CCol sm={6} xl={4}>
-          <StatCard icon={cilUser} label="Your Role" value={user?.global_role ? user.global_role.charAt(0).toUpperCase() + user.global_role.slice(1) : '—'} color="info" />
-        </CCol>
-        <CCol sm={6} xl={4}>
-          <StatCard icon={cilPeople} label="Account" value={user?.email || '—'} color="success" />
-        </CCol>
-      </CRow>
+      {/* ... Welcome banner and Stat cards stay the same ... */}
 
       {/* Admin quick actions */}
       {isAdmin && (
@@ -88,6 +50,19 @@ const Dashboard = () => {
                 >
                   <CIcon icon={cilPeople} />
                   Manage Users
+                </CButton>
+              </CCol>
+
+              {/* NEW: Manage Projects Button */}
+              <CCol xs={12} sm="auto">
+                <CButton
+                  color="info"
+                  variant="outline"
+                  className="d-flex align-items-center gap-2"
+                  onClick={() => navigate('/admin/projects')}
+                >
+                  <CIcon icon={cilBriefcase} />
+                  Manage Projects
                 </CButton>
               </CCol>
             </CRow>

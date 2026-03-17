@@ -28,6 +28,11 @@ const _nav = [
         name: 'User Management',
         to: '/admin/users',
       },
+      {
+        component: CNavItem,
+        name: 'Projects Management',
+        to: '/admin/projects',
+      },
     ],
   },
 ]
