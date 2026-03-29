@@ -22,6 +22,7 @@ const Typography = React.lazy(() => import('./views/theme/typography/Typography'
 
 // Admin
 const UserManagement = React.lazy(() => import('./views/admin/UserManagement'))
+const ProjectManagement = React.lazy(() => import('./views/admin/project/ProjectManagement'))
 
 // Base
 const Accordion = React.lazy(() => import('./views/base/accordion/Accordion'))
@@ -135,6 +136,7 @@ const routes = [
   { path: '/widgets', name: 'Widgets', element: Widgets },
   // Admin Routes
   { path: '/admin/users', name: 'User Management', element: UserManagement },
+  { path: '/admin/projects', name: 'Project Management', element: ProjectManagement },
 ]
 
 export default routes
