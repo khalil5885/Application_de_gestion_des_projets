@@ -1,8 +1,11 @@
 import React from 'react'
 import { COffcanvas, COffcanvasHeader, COffcanvasTitle, COffcanvasBody,CButton, CFormLabel, CFormInput, CFormSelect } from '@coreui/react'
 import api from '../../../api'
+import { useNavigate } from 'react-router-dom'
+
 
 const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
+  const navigate = useNavigate()
   if (!project) return null;
 
   const handleUpdate = async (field, value) => {
@@ -79,7 +82,7 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
 
 <hr />
 
-<CButton color="primary" variant="outline" className="w-100" onClick={() => {/* Navigate or open deeper edit modal */}}>
+<CButton color="primary" variant="outline" className="w-100" onClick={() => navigate(`/admin/projects/${project.id}`)}>
   View Full Details & Tasks
 </CButton>
       </COffcanvasBody>
