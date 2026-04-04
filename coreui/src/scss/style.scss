@@ -65,3 +65,202 @@ body {
     --cui-footer-bg: var(--cui-body-bg);
   }
 }
+/* ==========================================================================
+   Project Detail: SaaS Kanban & Grid (Animated & Glassmorphism)
+   ========================================================================== */
+/* ==========================================================================
+   Project Detail Page
+   ========================================================================== */
+
+.project-detail-wrapper {
+  font-family: 'Inter', sans-serif;
+
+  // Meta strip hover effect
+  .meta-item {
+    position: relative;
+    transition: background 0.2s ease;
+
+    .meta-edit-hint {
+      opacity: 0;
+      color: var(--cui-secondary-color);
+      transition: opacity 0.2s ease;
+      font-size: 0.75rem;
+    }
+
+    &:hover {
+      background: var(--cui-tertiary-bg);
+      cursor: pointer;
+
+      .meta-edit-hint {
+        opacity: 1;
+      }
+    }
+  }
+}
+
+// Kanban horizontal scroll
+.kanban-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 16px;
+
+  &::-webkit-scrollbar { height: 6px; }
+  &::-webkit-scrollbar-track { background: var(--cui-secondary-bg); border-radius: 8px; }
+  &::-webkit-scrollbar-thumb { background: var(--cui-border-color); border-radius: 8px; }
+}
+
+// Role filter pill
+.role-filter-group {
+  background: var(--cui-secondary-bg);
+  border: 1px solid var(--cui-border-color-translucent);
+  border-radius: 50rem;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+
+  .filter-label {
+    color: var(--cui-secondary-color);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    padding: 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-right: 1px solid var(--cui-border-color-translucent);
+    margin-right: 4px;
+  }
+
+  .filter-btn {
+    background: transparent;
+    color: var(--cui-secondary-color);
+    border: none;
+    border-radius: 50rem;
+    padding: 5px 18px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    cursor: pointer;
+    transition: all 0.25s ease;
+
+    &.active {
+      background-color: #5856d6;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(88, 86, 214, 0.35);
+    }
+
+    &:hover:not(.active) {
+      color: var(--cui-body-color);
+      background: var(--cui-tertiary-bg);
+    }
+  }
+}
+
+// View toggle buttons
+.view-toggle-btn {
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: var(--cui-secondary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &.active {
+    background-color: #5856d6;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(88, 86, 214, 0.4);
+  }
+
+  &:hover:not(.active) {
+    background: var(--cui-tertiary-bg);
+    color: var(--cui-body-color);
+  }
+}
+
+// Kanban user columns
+.kanban-user-card {
+  background: var(--cui-card-bg);
+  border: 1px solid var(--cui-border-color-translucent);
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.25s ease;
+
+  &:hover {
+    border-color: var(--cui-border-color);
+  }
+
+  .user-avatar {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1.1rem;
+    position: relative;
+
+    .status-dot {
+      position: absolute;
+      bottom: -3px;
+      right: -3px;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      border: 3px solid var(--cui-card-bg);
+    }
+  }
+}
+
+// Drop zones
+.drop-zone-container {
+  flex-grow: 1;
+  border-radius: 12px;
+  transition: all 0.25s ease;
+  padding: 4px;
+
+  &.drag-over {
+    background-color: rgba(88, 86, 214, 0.07);
+    border: 1px dashed #5856d6;
+    box-shadow: inset 0 0 16px rgba(88, 86, 214, 0.12);
+  }
+}
+
+.empty-dropzone {
+  border: 2px dashed var(--cui-border-color-translucent);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+  color: var(--cui-tertiary-color);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  transition: all 0.25s ease;
+  flex-grow: 1;
+}
+
+// Task cards
+.task-card {
+  background: var(--cui-secondary-bg);
+  border: 1px solid var(--cui-border-color-translucent);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: grab;
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: var(--cui-border-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  &:active {
+    cursor: grabbing;
+    transform: scale(0.98);
+  }
+}

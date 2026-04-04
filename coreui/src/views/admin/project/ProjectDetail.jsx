@@ -1,40 +1,36 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import {
-  CBadge,
-  CButton,
-  CCard,
-  CCardBody,
-  CCardHeader,
-  CCol,
-  CRow,
-  CSpinner,
-  CTable,
-  CTableBody,
-  CTableDataCell,
-  CTableHead,
-  CTableHeaderCell,
-  CTableRow,
-  CAlert,
-} from '@coreui/react'
+import { CBadge, CSpinner, CAlert } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
-  cilArrowLeft,
-  cilCalendar,
-  cilUser,
-  cilPeople,
-  cilTask,
-  cilBriefcase,
-  cilClock,
+  cilArrowLeft, cilCalendar, cilUser, cilBriefcase,
+  cilFilter, cilGrid, cilList, cilCheckCircle, cilPeople,
+  cilPencil,
 } from '@coreui/icons'
+import { motion, AnimatePresence } from 'motion/react'
 import api from '../../../api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-const formatDate = (iso) => {
-  if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric',
+const getInitials = (name) => {
+  if (!name || name === 'Unassigned') return 'U'
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+}
+
+const getRoleColor = (role, isUnassigned) => {
+  if (isUnassigned) return '#e55353'
+  switch (role?.toLowerCase()) {
+    case 'manager':   return '#9333ea'
+    case 'developer': return '#3b82f6'
+    case 'viewer':    return '#9ca3af'
+    default:          return '#8a93a2'
+  }
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '—'
+  return new Date(dateString).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric', year: 'numeric',
   })
 }
 
@@ -52,251 +48,345 @@ const STATUS_LABELS = {
   on_hold:     'On Hold',
 }
 
-const PRIORITY_COLORS = {
-  low:    'success',
-  medium: 'warning',
-  high:   'danger',
-}
+// ─── Meta Item ────────────────────────────────────────────────────────────────
 
-const TASK_STATUS_COLORS = {
-  todo:        'secondary',
-  in_progress: 'primary',
-  done:        'success',
-  review:      'info',
-}
-
-// ─── Info Card ────────────────────────────────────────────────────────────────
-
-const InfoCard = ({ icon, label, value }) => (
-  <CCard className="border-0 shadow-sm h-100">
-    <CCardBody className="p-3">
-      <div className="d-flex align-items-center gap-2 mb-1">
-        <CIcon icon={icon} size="sm" className="text-primary" />
-        <span className="text-body-secondary small fw-semibold text-uppercase" style={{ letterSpacing: '0.05em', fontSize: 10 }}>
-          {label}
-        </span>
+const MetaItem = ({ icon, label, value, color = 'primary' }) => (
+  <div className="meta-item d-flex align-items-center gap-3 px-4 py-3 rounded-3">
+    <div
+      className={`rounded-circle d-flex align-items-center justify-content-center bg-${color} bg-opacity-10`}
+      style={{ width: 38, height: 38, flexShrink: 0 }}
+    >
+      <CIcon icon={icon} size="sm" className={`text-${color}`} />
+    </div>
+    <div style={{ minWidth: 0 }}>
+      <div
+        className="text-uppercase fw-bold mb-1"
+        style={{ fontSize: '0.6rem', letterSpacing: '1.5px', color: 'var(--cui-secondary-color)' }}
+      >
+        {label}
       </div>
-      <div className="fw-bold" style={{ fontSize: 15 }}>{value || '—'}</div>
-    </CCardBody>
-  </CCard>
+      <div className="fw-bold" style={{ fontSize: '0.88rem' }}>
+        {value || '—'}
+      </div>
+    </div>
+    <div className="meta-edit-hint ms-auto">
+      <CIcon icon={cilPencil} size="sm" />
+    </div>
+  </div>
 )
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─── Kanban Column ────────────────────────────────────────────────────────────
 
-const ProjectDetail = () => {
-  const { id }       = useParams()
-  const navigate     = useNavigate()
-  const [project, setProject] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
-
-  useEffect(() => {
-    const fetch = async () => {
-      setLoading(true)
-      try {
-        const res = await api.get(`/api/admin/projects/${id}`)
-        setProject(res.data.data)
-      } catch (err) {
-        setError('Failed to load project details.')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetch()
-  }, [id])
-
-  if (loading) return (
-    <div className="text-center py-5">
-      <CSpinner color="primary" />
-    </div>
-  )
-
-  if (error) return <CAlert color="danger">{error}</CAlert>
-
-  if (!project) return null
+const KanbanColumn = ({ userId, group, onDragStart, onDragOver, onDragLeave, onDrop }) => {
+  const isUnassigned = userId === 'unassigned'
+  const roleColor    = getRoleColor(group.role, isUnassigned)
 
   return (
-    <>
-      {/* ── Header ── */}
-      <div className="d-flex align-items-center justify-content-between mb-4">
-        <div className="d-flex align-items-center gap-3">
-          <CButton
-            color="secondary"
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/admin/projects')}
-            className="d-flex align-items-center gap-1"
+    <div
+      className="kanban-user-card p-4"
+      style={{ borderTop: `3px solid ${roleColor}` }}
+    >
+      {/* Header */}
+      <div className="d-flex justify-content-between align-items-start mb-4">
+        <div className="d-flex gap-3 align-items-center">
+          <div
+            className="user-avatar"
+            style={{
+              background: `${roleColor}18`,
+              color: roleColor,
+              border: `1.5px solid ${roleColor}40`,
+            }}
           >
-            <CIcon icon={cilArrowLeft} size="sm" />
-            Back
-          </CButton>
-          <div>
-            <div className="d-flex align-items-center gap-2">
-              <h4 className="fw-bold mb-0">{project.name}</h4>
-              <CBadge color={STATUS_COLORS[project.status]}>
-                {STATUS_LABELS[project.status]}
-              </CBadge>
-            </div>
-            <p className="text-body-secondary small mb-0 mt-1">
-              {project.description}
-            </p>
+            {getInitials(group.name)}
+            <span className="status-dot" style={{ backgroundColor: roleColor }} />
           </div>
+          <div>
+            <h5 className="mb-0 fw-bolder" style={{ fontSize: '0.95rem' }}>{group.name}</h5>
+            <small
+              className="fw-bold text-uppercase"
+              style={{ fontSize: '0.6rem', letterSpacing: '1.5px', color: roleColor }}
+            >
+              {group.role || 'UNASSIGNED'}
+            </small>
+          </div>
+        </div>
+        <div
+          className="rounded-pill px-3 py-1 fw-bold"
+          style={{
+            fontSize: '0.7rem',
+            background: `${roleColor}18`,
+            color: roleColor,
+            border: `1px solid ${roleColor}30`,
+          }}
+        >
+          {group.tasks.length} TASKS
         </div>
       </div>
 
-      {/* ── Info Cards Row ── */}
-      <CRow className="g-3 mb-4">
-        <CCol sm={6} lg={3}>
-          <InfoCard icon={cilUser}      label="Client"       value={project.client?.name} />
-        </CCol>
-        <CCol sm={6} lg={3}>
-          <InfoCard icon={cilBriefcase} label="Project Type" value={project.project_type?.name} />
-        </CCol>
-        <CCol sm={6} lg={3}>
-          <InfoCard icon={cilCalendar}  label="Start Date"   value={formatDate(project.start_date)} />
-        </CCol>
-        <CCol sm={6} lg={3}>
-          <InfoCard icon={cilClock}     label="End Date"     value={formatDate(project.end_date)} />
-        </CCol>
-      </CRow>
-
-      <CRow className="g-4">
-        {/* ── Tasks Table ── */}
-        <CCol lg={8}>
-          <CCard className="border-0 shadow-sm">
-            <CCardHeader className="bg-transparent border-bottom d-flex align-items-center justify-content-between py-3">
-              <div className="d-flex align-items-center gap-2">
-                <CIcon icon={cilTask} className="text-primary" />
-                <span className="fw-bold">Tasks</span>
-                <CBadge color="secondary" className="ms-1">{project.tasks?.length || 0}</CBadge>
-              </div>
-            </CCardHeader>
-            <CCardBody className="p-0">
-              {!project.tasks?.length ? (
-                <div className="text-center text-body-secondary py-5 small fw-semibold">
-                  No tasks assigned to this project yet.
-                </div>
-              ) : (
-                <CTable align="middle" hover responsive className="mb-0">
-                  <CTableHead>
-                    <CTableRow>
-                      <CTableHeaderCell className="bg-body-tertiary ps-4">Title</CTableHeaderCell>
-                      <CTableHeaderCell className="bg-body-tertiary">Status</CTableHeaderCell>
-                      <CTableHeaderCell className="bg-body-tertiary">Priority</CTableHeaderCell>
-                      <CTableHeaderCell className="bg-body-tertiary">Due Date</CTableHeaderCell>
-                    </CTableRow>
-                  </CTableHead>
-                  <CTableBody>
-                    {project.tasks.map(task => (
-                      <CTableRow key={task.id}>
-                        <CTableDataCell className="ps-4">
-                          <div className="fw-semibold">{task.title}</div>
-                          {task.description && (
-                            <div
-                              className="text-body-secondary small text-truncate"
-                              style={{ maxWidth: 260 }}
-                            >
-                              {task.description}
-                            </div>
-                          )}
-                        </CTableDataCell>
-                        <CTableDataCell>
-                          <CBadge color={TASK_STATUS_COLORS[task.status] || 'secondary'}>
-                            {task.status?.replace('_', ' ')}
-                          </CBadge>
-                        </CTableDataCell>
-                        <CTableDataCell>
-                          <CBadge color={PRIORITY_COLORS[task.priority] || 'secondary'}>
-                            {task.priority}
-                          </CBadge>
-                        </CTableDataCell>
-                        <CTableDataCell className="small text-body-secondary">
-                          {formatDate(task.due_date)}
-                        </CTableDataCell>
-                      </CTableRow>
-                    ))}
-                  </CTableBody>
-                </CTable>
-              )}
-            </CCardBody>
-          </CCard>
-        </CCol>
-
-        {/* ── Right Column: Members + Meta ── */}
-        <CCol lg={4}>
-
-          {/* Team Members */}
-          <CCard className="border-0 shadow-sm mb-4">
-            <CCardHeader className="bg-transparent border-bottom d-flex align-items-center gap-2 py-3">
-              <CIcon icon={cilPeople} className="text-primary" />
-              <span className="fw-bold">Team Members</span>
-              <CBadge color="secondary" className="ms-1">{project.members?.length || 0}</CBadge>
-            </CCardHeader>
-            <CCardBody className="p-0">
-              {!project.members?.length ? (
-                <div className="text-center text-body-secondary py-4 small fw-semibold">
-                  No members assigned yet.
-                </div>
-              ) : (
-                <div className="px-3 py-2">
-                  {project.members.map(member => (
-                    <div
-                      key={member.id}
-                      className="d-flex align-items-center justify-content-between py-2"
-                      style={{ borderBottom: '1px solid var(--cui-border-color-translucent)' }}
-                    >
-                      <div className="d-flex align-items-center gap-2">
-                        <div
-                          className="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white fw-bold"
-                          style={{ width: 32, height: 32, fontSize: 13, flexShrink: 0 }}
-                        >
-                          {member.name?.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="fw-semibold small">{member.name}</div>
-                          <div className="text-body-secondary" style={{ fontSize: 11 }}>{member.email}</div>
-                        </div>
-                      </div>
-                      <CBadge color="info" className="text-capitalize">
-                        {member.pivot?.project_role || 'member'}
-                      </CBadge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CCardBody>
-          </CCard>
-
-          {/* Project Meta */}
-          <CCard className="border-0 shadow-sm">
-            <CCardHeader className="bg-transparent border-bottom py-3">
-              <span className="fw-bold">Project Info</span>
-            </CCardHeader>
-            <CCardBody>
-              <div className="d-flex flex-column gap-3">
-                <div>
-                  <div className="text-body-secondary small fw-semibold text-uppercase mb-1" style={{ fontSize: 10, letterSpacing: '0.05em' }}>Created By</div>
-                  <div className="fw-semibold small">{project.creator?.name || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-body-secondary small fw-semibold text-uppercase mb-1" style={{ fontSize: 10, letterSpacing: '0.05em' }}>Created At</div>
-                  <div className="fw-semibold small">{formatDate(project.created_at)}</div>
-                </div>
-                <div>
-                  <div className="text-body-secondary small fw-semibold text-uppercase mb-1" style={{ fontSize: 10, letterSpacing: '0.05em' }}>Project Type</div>
-                  <div className="fw-semibold small">{project.project_type?.name || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-body-secondary small fw-semibold text-uppercase mb-1" style={{ fontSize: 10, letterSpacing: '0.05em' }}>Total Tasks</div>
-                  <div className="fw-semibold small">{project.tasks?.length || 0} tasks</div>
+      {/* Drop zone */}
+      <div
+        className="drop-zone-container d-flex flex-column"
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={(e) => onDrop(e, userId)}
+      >
+        {group.tasks.length === 0 ? (
+          <div className="empty-dropzone">
+            <CIcon icon={cilCheckCircle} size="xl" className="mb-2 opacity-25" />
+            NO ACTIVE TASKS
+          </div>
+        ) : (
+          <div className="d-flex flex-column gap-3">
+            {group.tasks.map(task => (
+              <div
+                key={task.id}
+                className="task-card"
+                draggable
+                onDragStart={(e) => onDragStart(e, task.id)}
+              >
+                <h6 className="fw-bold mb-3" style={{ lineHeight: 1.4, fontSize: '0.875rem' }}>
+                  {task.title}
+                </h6>
+                <div className="d-flex justify-content-between align-items-center">
+                  <CBadge
+                    color={
+                      task.priority === 'high' ? 'danger' :
+                      task.priority === 'low'  ? 'success' : 'warning'
+                    }
+                    shape="rounded-pill"
+                    className="px-3 py-1 text-uppercase fw-bold"
+                    style={{ fontSize: '0.6rem', letterSpacing: '1px' }}
+                  >
+                    {task.priority || 'medium'}
+                  </CBadge>
+                  <small
+                    className="d-flex align-items-center gap-1 fw-bold"
+                    style={{ fontSize: '0.72rem', color: 'var(--cui-secondary-color)' }}
+                  >
+                    <CIcon icon={cilCalendar} size="sm" />
+                    {formatDate(task.due_date)}
+                  </small>
                 </div>
               </div>
-            </CCardBody>
-          </CCard>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
 
-        </CCol>
-      </CRow>
-    </>
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+const ProjectDetail = () => {
+  const { id }      = useParams()
+  const navigate    = useNavigate()
+  const [project, setProject]           = useState(null)
+  const [loading, setLoading]           = useState(true)
+  const [error, setError]               = useState(null)
+  const [selectedRole, setSelectedRole] = useState('all')
+  const [viewMode, setViewMode]         = useState('grid')
+
+  const fetchData = async () => {
+    try {
+      const res = await api.get(`/api/admin/projects/${id}`)
+      setProject(res.data.data)
+    } catch {
+      setError('Failed to load project.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchData() }, [id])
+
+  const { assignedColumns, unassignedColumn } = useMemo(() => {
+    if (!project) return {
+      assignedColumns: {},
+      unassignedColumn: { name: 'Unassigned', tasks: [], role: null },
+    }
+
+    const assigned   = {}
+    const unassigned = { name: 'Unassigned', tasks: [], role: null }
+
+    project.members.forEach(m => {
+      assigned[m.id] = { name: m.name, tasks: [], role: m.pivot?.project_role }
+    })
+
+    project.tasks.forEach(task => {
+      const key = task.assigned_to
+      if (key && assigned[key]) assigned[key].tasks.push(task)
+      else unassigned.tasks.push(task)
+    })
+
+    return { assignedColumns: assigned, unassignedColumn: unassigned }
+  }, [project])
+
+  const filteredAssigned = useMemo(() => {
+    if (selectedRole === 'all') return assignedColumns
+    const f = {}
+    Object.keys(assignedColumns).forEach(k => {
+      if (assignedColumns[k].role?.toLowerCase() === selectedRole) f[k] = assignedColumns[k]
+    })
+    return f
+  }, [assignedColumns, selectedRole])
+
+  const onDragStart = (e, taskId) => e.dataTransfer.setData('taskId', taskId)
+  const onDragOver  = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }
+  const onDragLeave = (e) => { e.preventDefault(); e.currentTarget.classList.remove('drag-over') }
+  const onDrop = async (e, targetUserId) => {
+    e.preventDefault()
+    e.currentTarget.classList.remove('drag-over')
+    const taskId = e.dataTransfer.getData('taskId')
+    if (!taskId) return
+    try {
+      const userId = targetUserId === 'unassigned' ? null : targetUserId
+      await api.patch(`/api/admin/tasks/${taskId}/assignEmployee`, { user_id: userId })
+      fetchData()
+    } catch { console.error('Assignment failed') }
+  }
+
+  if (loading) return <div className="text-center py-5"><CSpinner color="primary" /></div>
+  if (error)   return <CAlert color="danger">{error}</CAlert>
+  if (!project) return null
+
+  return (
+    <div className="project-detail-wrapper">
+
+      {/* Back */}
+      <div
+        className="d-inline-flex align-items-center gap-2 mb-4 fw-semibold"
+        style={{ cursor: 'pointer', color: 'var(--cui-secondary-color)', fontSize: 14 }}
+        onClick={() => navigate('/admin/projects')}
+      >
+        <CIcon icon={cilArrowLeft} size="sm" /> Back to Projects
+      </div>
+
+      {/* Title */}
+      <div className="d-flex align-items-center gap-3 mb-4">
+        <h1 className="fw-black mb-0" style={{ letterSpacing: '-0.5px', fontSize: 'clamp(1.6rem, 3vw, 2.2rem)' }}>
+          {project.name}
+        </h1>
+        <CBadge color={STATUS_COLORS[project.status]} className="px-3 py-2" style={{ fontSize: '0.75rem' }}>
+          {STATUS_LABELS[project.status]}
+        </CBadge>
+      </div>
+
+      {/* Meta strip */}
+      <div
+        className="d-flex flex-wrap gap-1 rounded-3 p-2 mb-5"
+        style={{
+          background: 'var(--cui-secondary-bg)',
+          border: '1px solid var(--cui-border-color-translucent)',
+        }}
+      >
+        <MetaItem icon={cilUser}        label="Client"     value={project.client?.name}           color="primary" />
+        <div className="vr my-2" style={{ opacity: 0.12 }} />
+        <MetaItem icon={cilBriefcase}   label="Category"   value={project.project_type?.name}     color="info" />
+        <div className="vr my-2" style={{ opacity: 0.12 }} />
+        <MetaItem icon={cilCalendar}    label="Start Date" value={formatDate(project.start_date)} color="success" />
+        <div className="vr my-2" style={{ opacity: 0.12 }} />
+        <MetaItem icon={cilCalendar}    label="Deadline"   value={formatDate(project.end_date)}   color="warning" />
+        <div className="vr my-2" style={{ opacity: 0.12 }} />
+        <MetaItem icon={cilPeople}      label="Team"       value={`${project.members?.length || 0} members`} color="primary" />
+        <div className="vr my-2" style={{ opacity: 0.12 }} />
+        <MetaItem icon={cilCheckCircle} label="Tasks"      value={`${project.tasks?.length || 0} total`}    color="success" />
+      </div>
+
+      {/* Controls */}
+      <div className="d-flex justify-content-end align-items-center mb-4 gap-3">
+        <div className="border rounded p-1 d-flex gap-1" style={{ background: 'var(--cui-secondary-bg)' }}>
+          <button className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}>
+            <CIcon icon={cilGrid} />
+          </button>
+          <button className={`view-toggle-btn ${viewMode === 'kanban' ? 'active' : ''}`} onClick={() => setViewMode('kanban')}>
+            <CIcon icon={cilList} />
+          </button>
+        </div>
+        <div className="role-filter-group">
+          <div className="filter-label"><CIcon icon={cilFilter} size="sm" /> ROLE</div>
+          {['all', 'manager', 'developer', 'viewer'].map(role => (
+            <button
+              key={role}
+              className={`filter-btn ${selectedRole === role ? 'active' : ''}`}
+              onClick={() => setSelectedRole(role)}
+            >
+              {role}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Two-panel layout: scrollable board + fixed unassigned ── */}
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+
+        {/* LEFT: scrollable assigned columns */}
+        <div
+          className={`d-flex gap-4 ${viewMode === 'kanban' ? 'kanban-scroll-container flex-nowrap' : 'flex-wrap'}`}
+          style={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}
+        >
+          <AnimatePresence mode="popLayout">
+            {Object.entries(filteredAssigned).map(([userId, group]) => (
+              <motion.div
+                layout
+                key={userId}
+                initial={{ opacity: 0, scale: 0.92 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.92 }}
+                transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
+                style={{
+                  width:    viewMode === 'kanban' ? '300px' : 'calc(50% - 8px)',
+                  minWidth: '260px',
+                  flexShrink: 0,
+                }}
+              >
+                <KanbanColumn
+                  userId={userId}
+                  group={group}
+                  onDragStart={onDragStart}
+                  onDragOver={onDragOver}
+                  onDragLeave={onDragLeave}
+                  onDrop={onDrop}
+                />
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {Object.keys(filteredAssigned).length === 0 && (
+            <div
+              className="text-center text-body-secondary fw-semibold py-5 w-100"
+              style={{ fontSize: 13 }}
+            >
+              No members match this role filter.
+            </div>
+          )}
+        </div>
+
+        {/* RIGHT: fixed unassigned column — sticky, independently scrollable */}
+        <div
+          style={{
+            width: 300,
+            flexShrink: 0,
+            position: 'sticky',
+            top: 80, // clears the CoreUI header
+            maxHeight: 'calc(100vh - 120px)',
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            scrollbarWidth: 'thin',
+          }}
+        >
+          <KanbanColumn
+            userId="unassigned"
+            group={unassignedColumn}
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDrop={onDrop}
+          />
+        </div>
+
+      </div>
+    </div>
   )
 }
 

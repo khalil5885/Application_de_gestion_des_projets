@@ -60,7 +60,7 @@ const AppSidebar = () => {
   return (
     <CSidebar
       className="border-end"
-      colorScheme="dark"
+      
       position="fixed"
       unfoldable={unfoldable}
       visible={sidebarShow}
@@ -70,12 +70,12 @@ const AppSidebar = () => {
     >
       <CSidebarHeader className="border-bottom">
         <CSidebarBrand to="/">
-          <span className="sidebar-brand-full fw-bold fs-5 text-white">WebMedia</span>
-          <span className="sidebar-brand-narrow fw-bold text-white">WM</span>
+          <span className="sidebar-brand-full fw-bold fs-5 ">WebMedia</span>
+          <span className="sidebar-brand-narrow fw-bold ">WM</span>
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"
-          dark
+          
           onClick={() => dispatch({ type: 'set', sidebarShow: false })}
         />
       </CSidebarHeader>
