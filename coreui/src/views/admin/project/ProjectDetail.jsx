@@ -7,7 +7,7 @@ import {
   cilFilter, cilGrid, cilList, cilCheckCircle, cilPeople,
   cilPencil,
 } from '@coreui/icons'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../api'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -144,9 +144,33 @@ const KanbanColumn = ({ userId, group, onDragStart, onDragOver, onDragLeave, onD
                 draggable
                 onDragStart={(e) => onDragStart(e, task.id)}
               >
-                <h6 className="fw-bold mb-3" style={{ lineHeight: 1.4, fontSize: '0.875rem' }}>
-                  {task.title}
-                </h6>
+                <div className="d-flex justify-content-between align-items-start mb-3">
+                  <h6 className="fw-bold mb-0" style={{ lineHeight: 1.4, fontSize: '0.875rem', flex: 1 }}>
+                    {task.title}
+                  </h6>
+                  
+                  {/* Task Assignee Mini-Avatar */}
+                  {task.assignee_name && (
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="ms-2 d-flex align-items-center justify-content-center rounded-circle fw-bold"
+                      style={{ 
+                        width: 22, 
+                        height: 22, 
+                        fontSize: '0.6rem', 
+                        background: `${roleColor}25`,
+                        border: `1px solid ${roleColor}40`,
+                        color: roleColor,
+                        flexShrink: 0
+                      }}
+                      title={`Assigned to ${task.assignee_name}`}
+                    >
+                      {getInitials(task.assignee_name)}
+                    </motion.div>
+                  )}
+                </div>
+
                 <div className="d-flex justify-content-between align-items-center">
                   <CBadge
                     color={
@@ -209,14 +233,20 @@ const ProjectDetail = () => {
     const assigned   = {}
     const unassigned = { name: 'Unassigned', tasks: [], role: null }
 
+    // Initialize columns for each member
     project.members.forEach(m => {
       assigned[m.id] = { name: m.name, tasks: [], role: m.pivot?.project_role }
     })
 
+    // Distribute tasks and attach member names for the mini-avatars
     project.tasks.forEach(task => {
-      const key = task.assigned_to
-      if (key && assigned[key]) assigned[key].tasks.push(task)
-      else unassigned.tasks.push(task)
+      const memberId = task.assigned_to
+      if (memberId && assigned[memberId]) {
+        const taskWithMember = { ...task, assignee_name: assigned[memberId].name }
+        assigned[memberId].tasks.push(taskWithMember)
+      } else {
+        unassigned.tasks.push(task)
+      }
     })
 
     return { assignedColumns: assigned, unassignedColumn: unassigned }
@@ -247,7 +277,7 @@ const ProjectDetail = () => {
   }
 
   if (loading) return <div className="text-center py-5"><CSpinner color="primary" /></div>
-  if (error)   return <CAlert color="danger">{error}</CAlert>
+  if (error)    return <CAlert color="danger">{error}</CAlert>
   if (!project) return null
 
   return (
@@ -290,7 +320,7 @@ const ProjectDetail = () => {
         <div className="vr my-2" style={{ opacity: 0.12 }} />
         <MetaItem icon={cilPeople}      label="Team"       value={`${project.members?.length || 0} members`} color="primary" />
         <div className="vr my-2" style={{ opacity: 0.12 }} />
-        <MetaItem icon={cilCheckCircle} label="Tasks"      value={`${project.tasks?.length || 0} total`}    color="success" />
+        <MetaItem icon={cilCheckCircle} label="Tasks"       value={`${project.tasks?.length || 0} total`}    color="success" />
       </div>
 
       {/* Controls */}
@@ -317,10 +347,10 @@ const ProjectDetail = () => {
         </div>
       </div>
 
-      {/* ── Two-panel layout: scrollable board + fixed unassigned ── */}
+      {/* ── Two-panel layout ── */}
       <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
-        {/* LEFT: scrollable assigned columns */}
+        {/* LEFT: Assigned columns */}
         <div
           className={`d-flex gap-4 ${viewMode === 'kanban' ? 'kanban-scroll-container flex-nowrap' : 'flex-wrap'}`}
           style={{ flex: 1, minWidth: 0, alignItems: 'flex-start' }}
@@ -335,7 +365,7 @@ const ProjectDetail = () => {
                 exit={{ opacity: 0, scale: 0.92 }}
                 transition={{ type: 'spring', bounce: 0.25, duration: 0.5 }}
                 style={{
-                  width:    viewMode === 'kanban' ? '300px' : 'calc(50% - 8px)',
+                  width:     viewMode === 'kanban' ? '300px' : 'calc(50% - 8px)',
                   minWidth: '260px',
                   flexShrink: 0,
                 }}
@@ -353,25 +383,21 @@ const ProjectDetail = () => {
           </AnimatePresence>
 
           {Object.keys(filteredAssigned).length === 0 && (
-            <div
-              className="text-center text-body-secondary fw-semibold py-5 w-100"
-              style={{ fontSize: 13 }}
-            >
+            <div className="text-center text-body-secondary fw-semibold py-5 w-100" style={{ fontSize: 13 }}>
               No members match this role filter.
             </div>
           )}
         </div>
 
-        {/* RIGHT: fixed unassigned column — sticky, independently scrollable */}
+        {/* RIGHT: Fixed unassigned column */}
         <div
           style={{
             width: 300,
             flexShrink: 0,
             position: 'sticky',
-            top: 80, // clears the CoreUI header
+            top: 80,
             maxHeight: 'calc(100vh - 120px)',
             overflowY: 'auto',
-            overflowX: 'hidden',
             scrollbarWidth: 'thin',
           }}
         >
