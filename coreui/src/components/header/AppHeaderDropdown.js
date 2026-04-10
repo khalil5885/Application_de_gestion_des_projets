@@ -1,7 +1,6 @@
 import React from 'react'
 import {
   CAvatar,
-  CBadge,
   CDropdown,
   CDropdownDivider,
   CDropdownHeader,
@@ -10,83 +9,98 @@ import {
   CDropdownToggle,
 } from '@coreui/react'
 import {
-  cilBell,
-  cilCreditCard,
-  cilCommentSquare,
-  cilEnvelopeOpen,
-  cilFile,
-  cilLockLocked,
-  cilSettings,
-  cilTask,
   cilUser,
+  cilSettings,
+  cilHistory,
+  cilLockLocked,
+  cilPeople,
+  cilBriefcase,
 } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 
 import avatar8 from './../../assets/images/avatars/8.jpg'
 
 const AppHeaderDropdown = () => {
+  const navigate = useNavigate()
+  const { logout, user } = useAuth()
+
+  const handleLogout = async () => {
+    await logout()
+    navigate('/login')
+  }
+
+  const isAdmin = user?.global_role === 'admin'
+
   return (
     <CDropdown variant="nav-item">
       <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
         <CAvatar src={avatar8} size="md" />
       </CDropdownToggle>
-      <CDropdownMenu className="pt-0" placement="bottom-end">
-        <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>
-        <CDropdownItem href="#">
-          <CIcon icon={cilBell} className="me-2" />
-          Updates
-          <CBadge color="info" className="ms-2">
-            42
-          </CBadge>
+      <CDropdownMenu className="pt-0" placement="bottom-end" style={{ minWidth: 210 }}>
+        <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">
+          {user?.name || 'My Account'}
+          {isAdmin && (
+            <span className="ms-2 badge bg-primary" style={{ fontSize: 9 }}>Admin</span>
+          )}
+        </CDropdownHeader>
+
+        {/* Profile / Settings */}
+        <CDropdownItem
+          onClick={() => navigate('/settings')}
+          style={{ cursor: 'pointer' }}
+          className="d-flex align-items-center gap-2"
+        >
+          <CIcon icon={cilSettings} />
+          Profile & Settings
         </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilEnvelopeOpen} className="me-2" />
-          Messages
-          <CBadge color="success" className="ms-2">
-            42
-          </CBadge>
+
+        {/* Activity */}
+        <CDropdownItem
+          onClick={() => navigate('/workspace/activity')}
+          style={{ cursor: 'pointer' }}
+          className="d-flex align-items-center gap-2"
+        >
+          <CIcon icon={cilHistory} />
+          Activity Log
         </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilTask} className="me-2" />
-          Tasks
-          <CBadge color="danger" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilCommentSquare} className="me-2" />
-          Comments
-          <CBadge color="warning" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownHeader className="bg-body-secondary fw-semibold my-2">Settings</CDropdownHeader>
-        <CDropdownItem href="#">
-          <CIcon icon={cilUser} className="me-2" />
-          Profile
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilSettings} className="me-2" />
-          Settings
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilCreditCard} className="me-2" />
-          Payments
-          <CBadge color="secondary" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
-        <CDropdownItem href="#">
-          <CIcon icon={cilFile} className="me-2" />
-          Projects
-          <CBadge color="primary" className="ms-2">
-            42
-          </CBadge>
-        </CDropdownItem>
+
+        {/* Admin-only shortcuts */}
+        {isAdmin && (
+          <>
+            <CDropdownDivider />
+            <CDropdownHeader className="bg-body-secondary fw-semibold text-uppercase" style={{ fontSize: 10 }}>
+              Admin
+            </CDropdownHeader>
+            <CDropdownItem
+              onClick={() => navigate('/admin/projects')}
+              style={{ cursor: 'pointer' }}
+              className="d-flex align-items-center gap-2"
+            >
+              <CIcon icon={cilBriefcase} />
+              Projects
+            </CDropdownItem>
+            <CDropdownItem
+              onClick={() => navigate('/admin/users')}
+              style={{ cursor: 'pointer' }}
+              className="d-flex align-items-center gap-2"
+            >
+              <CIcon icon={cilPeople} />
+              User Management
+            </CDropdownItem>
+          </>
+        )}
+
         <CDropdownDivider />
-        <CDropdownItem href="#">
-          <CIcon icon={cilLockLocked} className="me-2" />
-          Lock Account
+
+        <CDropdownItem
+          onClick={handleLogout}
+          style={{ cursor: 'pointer' }}
+          className="d-flex align-items-center gap-2 text-danger"
+        >
+          <CIcon icon={cilLockLocked} className="text-danger" />
+          Logout
         </CDropdownItem>
       </CDropdownMenu>
     </CDropdown>
