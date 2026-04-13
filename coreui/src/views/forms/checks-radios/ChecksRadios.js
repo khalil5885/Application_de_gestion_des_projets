@@ -1,21 +1,21 @@
 import React from 'react'
 import { CCard, CCardBody, CCardHeader, CCol, CFormCheck, CFormSwitch, CRow } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const ChecksRadios = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="forms/checks-radios/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Checkbox</strong>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/checks-radios">
+            
               <CFormCheck id="flexCheckDefault" label="Default checkbox" />
               <CFormCheck id="flexCheckChecked" label="Checked checkbox" defaultChecked />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -30,10 +30,10 @@ const ChecksRadios = () => {
               are automatically styled to match with a lighter color to help indicate the
               input&#39;s state.
             </p>
-            <DocsExample href="forms/checks-radios#disabled">
+            
               <CFormCheck label="Disabled checkbox" disabled />
               <CFormCheck label="Disabled checked checkbox" defaultChecked disabled />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -48,7 +48,7 @@ const ChecksRadios = () => {
               are automatically styled to match with a lighter color to help indicate the
               input&#39;s state.
             </p>
-            <DocsExample href="forms/checks-radios#radios">
+            
               <CFormCheck
                 type="radio"
                 name="flexRadioDefault"
@@ -62,7 +62,7 @@ const ChecksRadios = () => {
                 label="Checked radio"
                 defaultChecked
               />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -72,7 +72,7 @@ const ChecksRadios = () => {
             <strong>React Radio</strong> <small>Disabled</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/checks-radios#disabled-1">
+            
               <CFormCheck
                 type="radio"
                 name="flexRadioDisabled"
@@ -88,7 +88,7 @@ const ChecksRadios = () => {
                 defaultChecked
                 disabled
               />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -103,7 +103,7 @@ const ChecksRadios = () => {
               properly to render a toggle switch. Switches also support the <code>disabled</code>{' '}
               attribute.
             </p>
-            <DocsExample href="forms/checks-radios#switches">
+            
               <CFormSwitch label="Default switch checkbox input" id="formSwitchCheckDefault" />
               <CFormSwitch
                 label="Checked switch checkbox input"
@@ -121,7 +121,7 @@ const ChecksRadios = () => {
                 defaultChecked
                 disabled
               />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -131,7 +131,7 @@ const ChecksRadios = () => {
             <strong>React Switches</strong> <small>Sizes</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/checks-radios#sizes">
+            
               <CFormSwitch label="Default switch checkbox input" id="formSwitchCheckDefault" />
               <CFormSwitch
                 size="lg"
@@ -143,7 +143,7 @@ const ChecksRadios = () => {
                 label="Extra large switch checkbox input"
                 id="formSwitchCheckDefaultXL"
               />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -157,11 +157,11 @@ const ChecksRadios = () => {
               By default, any number of checkboxes and radios that are immediate sibling will be
               vertically stacked and appropriately spaced.
             </p>
-            <DocsExample href="forms/checks-radios#default-stacked">
+            
               <CFormCheck id="defaultCheck1" label="Default checkbox" />
               <CFormCheck id="defaultCheck2" label="Disabled checkbox" disabled />
-            </DocsExample>
-            <DocsExample href="forms/checks-radios#default-stacked">
+            
+            
               <CFormCheck
                 type="radio"
                 name="exampleRadios"
@@ -185,7 +185,7 @@ const ChecksRadios = () => {
                 label="Disabled radio"
                 disabled
               />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -199,7 +199,7 @@ const ChecksRadios = () => {
               Group checkboxes or radios on the same horizontal row by adding <code>inline</code>{' '}
               boolean property to any <code>&lt;CFormCheck&gt;</code>.
             </p>
-            <DocsExample href="forms/checks-radios#inline">
+            
               <CFormCheck inline id="inlineCheckbox1" value="option1" label="1" />
               <CFormCheck inline id="inlineCheckbox2" value="option2" label="2" />
               <CFormCheck
@@ -209,8 +209,8 @@ const ChecksRadios = () => {
                 label="3 (disabled)"
                 disabled
               />
-            </DocsExample>
-            <DocsExample href="forms/checks-radios#inline">
+            
+            
               <CFormCheck
                 inline
                 type="radio"
@@ -236,7 +236,7 @@ const ChecksRadios = () => {
                 label="3 (disabled)"
                 disabled
               />
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -250,7 +250,7 @@ const ChecksRadios = () => {
               Remember to still provide some form of accessible name for assistive technologies (for
               instance, using <code>aria-label</code>).
             </p>
-            <DocsExample href="forms/checks-radios#without-labels">
+            
               <div>
                 <CFormCheck id="checkboxNoLabel" value="" aria-label="..." />
               </div>
@@ -263,7 +263,7 @@ const ChecksRadios = () => {
                   aria-label="..."
                 />
               </div>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -278,15 +278,15 @@ const ChecksRadios = () => {
               property on the <code>&lt;CFormCheck&gt;</code> component. These toggle buttons can
               further be grouped in a button group if needed.
             </p>
-            <DocsExample href="forms/checks-radios#toggle-buttons">
+            
               <CFormCheck
                 button={{ color: 'primary ' }}
                 id="btn-check"
                 autoComplete="off"
                 label="Single toggle"
               />
-            </DocsExample>
-            <DocsExample href="forms/checks-radios#toggle-buttons">
+            
+            
               <CFormCheck
                 button={{ color: 'primary ' }}
                 id="btn-check-2"
@@ -294,8 +294,8 @@ const ChecksRadios = () => {
                 label="Checked"
                 defaultChecked
               />
-            </DocsExample>
-            <DocsExample href="forms/checks-radios#toggle-buttons">
+            
+            
               <CFormCheck
                 button={{ color: 'primary ' }}
                 id="btn-check-3"
@@ -303,9 +303,9 @@ const ChecksRadios = () => {
                 label="Disabled"
                 disabled
               />
-            </DocsExample>
+            
             <h3>Radio toggle buttons</h3>
-            <DocsExample href="forms/checks-radios#toggle-buttons">
+            
               <CFormCheck
                 button={{ color: 'secondary' }}
                 type="radio"
@@ -340,12 +340,12 @@ const ChecksRadios = () => {
                 autoComplete="off"
                 label="Radio"
               />
-            </DocsExample>
+            
             <h3>Outlined styles</h3>
             <p className="text-body-secondary small">
               Different variants of button, such at the various outlined styles, are supported.
             </p>
-            <DocsExample href="forms/checks-radios#toggle-buttons">
+            
               <div>
                 <CFormCheck
                   button={{ color: 'primary', variant: 'outline' }}
@@ -382,7 +382,7 @@ const ChecksRadios = () => {
                   label="Radio"
                 />
               </div>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

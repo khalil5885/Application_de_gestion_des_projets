@@ -1,6 +1,6 @@
 import React from 'react'
 import { CCard, CCardHeader, CCardBody } from '@coreui/react'
-import { DocsLink } from 'src/components'
+
 
 const Typography = () => {
   return (
@@ -8,7 +8,7 @@ const Typography = () => {
       <CCard className="mb-4">
         <CCardHeader>
           Headings
-          <DocsLink href="https://coreui.io/docs/content/typography/" />
+          
         </CCardHeader>
         <CCardBody>
           <p>

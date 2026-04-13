@@ -14,13 +14,13 @@ import {
   CInputGroupText,
   CRow,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Layout = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="forms/layout/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>Layout</strong> <small>Form grid</small>
@@ -30,7 +30,7 @@ const Layout = () => {
               More complex forms can be built using our grid classes. Use these for form layouts
               that require multiple columns, varied widths, and additional alignment options.
             </p>
-            <DocsExample href="forms/layout#form-grid">
+            
               <CRow>
                 <CCol xs>
                   <CFormInput placeholder="First name" aria-label="First name" />
@@ -39,7 +39,7 @@ const Layout = () => {
                   <CFormInput placeholder="Last name" aria-label="Last name" />
                 </CCol>
               </CRow>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -53,7 +53,7 @@ const Layout = () => {
               By adding <a href="https://coreui.io/docs/layout/gutters/">gutter modifier classes</a>
               , you can have control over the gutter width in as well the inline as block direction.
             </p>
-            <DocsExample href="forms/layout#gutters">
+            
               <CRow className="g-3">
                 <CCol xs>
                   <CFormInput placeholder="First name" aria-label="First name" />
@@ -62,11 +62,11 @@ const Layout = () => {
                   <CFormInput placeholder="Last name" aria-label="Last name" />
                 </CCol>
               </CRow>
-            </DocsExample>
+            
             <p className="text-body-secondary small">
               More complex layouts can also be created with the grid system.
             </p>
-            <DocsExample href="forms/layout#gutters">
+            
               <CForm className="row g-3">
                 <CCol md={6}>
                   <CFormLabel htmlFor="inputEmail4">Email</CFormLabel>
@@ -108,7 +108,7 @@ const Layout = () => {
                   </CButton>
                 </CCol>
               </CForm>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -130,7 +130,7 @@ const Layout = () => {
               alignment you need. For example, we&#39;ve removed the <code>padding-top</code> on our
               stacked radio inputs label to better align the text baseline.
             </p>
-            <DocsExample href="forms/layout#horizontal-form">
+            
               <CForm>
                 <CRow className="mb-3">
                   <CFormLabel htmlFor="inputEmail3" className="col-sm-2 col-form-label">
@@ -185,7 +185,7 @@ const Layout = () => {
                   Sign in
                 </CButton>
               </CForm>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -200,7 +200,7 @@ const Layout = () => {
               your <code>&lt;CFormLabel&gt;</code>s or <code>&lt;legend&gt;</code>s to correctly
               follow the size of <code>.form-control-lg</code> and <code>.form-control-sm</code>.
             </p>
-            <DocsExample href="forms/layout#horizontal-form-label-sizing">
+            
               <CRow className="mb-3">
                 <CFormLabel
                   htmlFor="colFormLabelSm"
@@ -241,7 +241,7 @@ const Layout = () => {
                   />
                 </CCol>
               </CRow>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -259,7 +259,7 @@ const Layout = () => {
               split the rest, with specific column classes like{' '}
               <code>&lt;CCol sm=&#34;7&#34;&gt;</code>.
             </p>
-            <DocsExample href="forms/layout#column-sizing">
+            
               <CRow className="g-3">
                 <CCol sm={7}>
                   <CFormInput placeholder="City" aria-label="City" />
@@ -271,7 +271,7 @@ const Layout = () => {
                   <CFormInput placeholder="Zip" aria-label="Zip" />
                 </CCol>
               </CRow>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -287,7 +287,7 @@ const Layout = () => {
               columns only take up as much space as needed. Put another way, the column sizes itself
               based on the contents.
             </p>
-            <DocsExample href="forms/layout#auto-sizing">
+            
               <CForm className="row gy-2 gx-3 align-items-center">
                 <CCol xs="auto">
                   <CFormLabel className="visually-hidden" htmlFor="autoSizingInput">
@@ -324,11 +324,11 @@ const Layout = () => {
                   </CButton>
                 </CCol>
               </CForm>
-            </DocsExample>
+            
             <p className="text-body-secondary small">
               You can then remix that once again with size-specific column classes.
             </p>
-            <DocsExample href="forms/layout#auto-sizing">
+            
               <CForm className="row gx-3 gy-2 align-items-center">
                 <CCol sm={3}>
                   <CFormLabel className="visually-hidden" htmlFor="specificSizeInputName">
@@ -365,7 +365,7 @@ const Layout = () => {
                   </CButton>
                 </CCol>
               </CForm>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -383,7 +383,7 @@ const Layout = () => {
               <code>.align-items-center</code> aligns the form elements to the middle, making the{' '}
               <code>&lt;CFormCheck&gt;</code> align properly.
             </p>
-            <DocsExample href="forms/layout#inline-forms">
+            
               <CForm className="row row-cols-lg-auto g-3 align-items-center">
                 <CCol xs={12}>
                   <CFormLabel className="visually-hidden" htmlFor="inlineFormInputGroupUsername">
@@ -414,7 +414,7 @@ const Layout = () => {
                   </CButton>
                 </CCol>
               </CForm>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

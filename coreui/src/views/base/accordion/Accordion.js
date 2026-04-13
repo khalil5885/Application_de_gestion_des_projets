@@ -10,13 +10,13 @@ import {
   CAccordionHeader,
   CAccordionItem,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Accordion = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/accordion/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Accordion</strong>
@@ -25,7 +25,7 @@ const Accordion = () => {
             <p className="text-body-secondary small">
               Click the accordions below to expand/collapse the accordion content.
             </p>
-            <DocsExample href="components/accordion">
+            
               <CAccordion activeItemKey={2}>
                 <CAccordionItem itemKey={1}>
                   <CAccordionHeader>Accordion Item #1</CAccordionHeader>
@@ -64,7 +64,7 @@ const Accordion = () => {
                   </CAccordionBody>
                 </CAccordionItem>
               </CAccordion>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
         <CCard className="mb-4">
@@ -77,7 +77,7 @@ const Accordion = () => {
               borders, and some rounded corners to render accordions edge-to-edge with their parent
               container.
             </p>
-            <DocsExample href="components/accordion#flush">
+            
               <CAccordion flush>
                 <CAccordionItem itemKey={1}>
                   <CAccordionHeader>Accordion Item #1</CAccordionHeader>
@@ -116,7 +116,7 @@ const Accordion = () => {
                   </CAccordionBody>
                 </CAccordionItem>
               </CAccordion>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
         <CCard className="mb-4">
@@ -128,7 +128,7 @@ const Accordion = () => {
               Add <code>alwaysOpen</code> property to make accordion items stay open when another
               item is opened.
             </p>
-            <DocsExample href="components/accordion#flush">
+            
               <CAccordion alwaysOpen>
                 <CAccordionItem itemKey={1}>
                   <CAccordionHeader>Accordion Item #1</CAccordionHeader>
@@ -167,7 +167,7 @@ const Accordion = () => {
                   </CAccordionBody>
                 </CAccordionItem>
               </CAccordion>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

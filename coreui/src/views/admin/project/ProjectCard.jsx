@@ -2,8 +2,10 @@ import React from 'react'
 import { CButton, CCard, CCardBody } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilTrash, cilCalendar } from '@coreui/icons'
-import { useDraggable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
+import { useDraggable } from '@dnd-kit/core'
+import { CSS } from '@dnd-kit/utilities'
+import ProgressBar from './ProgressBar'
+import TaskBreakdown from './TaskBreakdown'
 
 const formatDate = (iso) => {
   if (!iso) return '—'
@@ -116,7 +118,10 @@ const style = {
               <div className="bg-primary rounded-pill" style={{ height: '100%', width: '60%' }} />
             </div>
           </div>
-        )}
+        )
+        ? <ProgressBar value={project.progress} />
+    : <TaskBreakdown tasks={project.tasks} />
+    }
 
         {/* Footer: Date & Avatar Stack */}
         <div

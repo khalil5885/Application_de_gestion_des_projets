@@ -17,6 +17,9 @@ import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 import api from '@/api'
 
+// 1. Import your logo image
+import logo from '../../../assets/images/logo-WEBMEDIA-TUNISIE-Retina-1.webp'
+
 const Login = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -30,23 +33,13 @@ const Login = () => {
     setError('')
 
     try {
-      // Get CSRF cookie first
-      // await api.get('/sanctum/csrf-cookie')
-
-      // Attempt login
       const response = await api.post('/api/login', {
         email,
         password,
       })
-
-      // Store token (localStorage or session storage)
       localStorage.setItem('auth_token', response.data.token)
       localStorage.setItem('user', JSON.stringify(response.data.user))
-
-      // Set default auth header for future requests
       api.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
-
-      // Redirect to dashboard
       navigate('/dashboard')
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed')
@@ -59,13 +52,26 @@ const Login = () => {
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
         <CRow className="justify-content-center">
-          <CCol md={8}>
+          <CCol md={8} lg={6} xl={5}> {/* Slightly narrowed for better look with logo */}
             <CCardGroup>
               <CCard className="p-4">
                 <CCardBody>
                   <CForm onSubmit={handleLogin}>
-                    <h1>Login</h1>
-                    <p className="text-body-secondary">Sign In to your account</p>
+                    {/* 2. Logo Container */}
+                    <div className="text-center mb-4">
+  <img 
+    src={logo} 
+    alt="Logo" 
+    style={{ 
+      height: '100px', // Increased size
+      width: 'auto',
+      filter: 'drop-shadow(0 0 10px rgba(0, 191, 255, 0.2))' // Optional: gives it a subtle glow
+    }} 
+    className="mb-2"
+  />
+  <h2 className="fw-bold">Login</h2> {/* Changed h1 to h2 for better scale */}
+  <p className="text-body-secondary small">Sign In to your account</p>
+</div>
                     
                     {error && <div className="alert alert-danger mb-3">{error}</div>}
 
@@ -103,7 +109,7 @@ const Login = () => {
                           {loading ? 'Logging in...' : 'Login'}
                         </CButton>
                       </CCol>
-                      <CCol xs={6} className="text-right">
+                      <CCol xs={6} className="text-end"> {/* Use text-end for Bootstrap 5 */}
                         <CButton color="link" className="px-0">
                           Forgot password?
                         </CButton>
@@ -112,22 +118,6 @@ const Login = () => {
                   </CForm>
                 </CCardBody>
               </CCard>
-              {/* <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
-                <CCardBody className="text-center">
-                  <div>
-                    <h2>Sign up</h2>
-                    <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
-                    </p>
-                    <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
-                      </CButton>
-                    </Link>
-                  </div>
-                </CCardBody>
-              </CCard> */}
             </CCardGroup>
           </CCol>
         </CRow>

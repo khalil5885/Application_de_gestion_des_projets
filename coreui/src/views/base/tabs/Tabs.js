@@ -11,13 +11,13 @@ import {
   CTabPanel,
   CTabs,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Navs = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/tabs/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Tabs</strong>
@@ -27,7 +27,7 @@ const Navs = () => {
               The basic React tabs example uses the <code>variant=&#34;tabs&#34;</code> props to
               generate a tabbed interface.
             </p>
-            <DocsExample href="components/tabs/#example">
+            
               <CTabs activeItemKey="profile">
                 <CTabList variant="tabs">
                   <CTab itemKey="home">Home</CTab>
@@ -52,7 +52,7 @@ const Navs = () => {
                   </CTabPanel>
                 </CTabContent>
               </CTabs>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -66,7 +66,7 @@ const Navs = () => {
               If you don’t provide the <code>variant</code> prop, the component will default to a
               basic style.
             </p>
-            <DocsExample href="components/tabs/#unstyled">
+            
               <CTabs activeItemKey="profile">
                 <CTabList>
                   <CTab itemKey="home">Home</CTab>
@@ -91,7 +91,7 @@ const Navs = () => {
                   </CTabPanel>
                 </CTabContent>
               </CTabs>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -104,7 +104,7 @@ const Navs = () => {
             <p className="text-body-secondary small">
               Take that same code, but use <code>variant=&#34;pills&#34;</code> instead:
             </p>
-            <DocsExample href="components/tabs/#unstyled">
+            
               <CTabs activeItemKey={2}>
                 <CTabList variant="pills">
                   <CTab aria-controls="home-tab-pane" itemKey={1}>
@@ -135,7 +135,7 @@ const Navs = () => {
                   </CTabPanel>
                 </CTabContent>
               </CTabs>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -148,7 +148,7 @@ const Navs = () => {
             <p className="text-body-secondary small">
               Take that same code, but use <code>variant=&#34;underline&#34;</code> instead:
             </p>
-            <DocsExample href="components/tabs/#unstyled">
+            
               <CTabs activeItemKey={2}>
                 <CTabList variant="underline">
                   <CTab aria-controls="home-tab-pane" itemKey={1}>
@@ -179,7 +179,7 @@ const Navs = () => {
                   </CTabPanel>
                 </CTabContent>
               </CTabs>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -192,7 +192,7 @@ const Navs = () => {
             <p className="text-body-secondary small">
               Take that same code, but use <code>variant=&#34;underline-border&#34;</code> instead:
             </p>
-            <DocsExample href="components/tabs/#unstyled">
+            
               <CTabs activeItemKey={2}>
                 <CTabList variant="underline-border">
                   <CTab aria-controls="home-tab-pane" itemKey={1}>
@@ -223,7 +223,7 @@ const Navs = () => {
                   </CTabPanel>
                 </CTabContent>
               </CTabs>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

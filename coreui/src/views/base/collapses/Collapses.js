@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { CButton, CCard, CCardBody, CCardHeader, CCol, CCollapse, CRow } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Collapses = () => {
   const [visible, setVisible] = useState(false)
@@ -11,14 +11,14 @@ const Collapses = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/collapse/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Collapse</strong>
           </CCardHeader>
           <CCardBody>
             <p className="text-body-secondary small">You can use a link or a button component.</p>
-            <DocsExample href="components/collapse">
+            
               <CButton
                 color="primary"
                 href="#"
@@ -41,7 +41,7 @@ const Collapses = () => {
                   </CCardBody>
                 </CCard>
               </CCollapse>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -52,7 +52,7 @@ const Collapses = () => {
           </CCardHeader>
           <CCardBody>
             <p className="text-body-secondary small">You can use a link or a button component.</p>
-            <DocsExample href="components/collapse#horizontal">
+            
               <CButton
                 className="mb-3"
                 color="primary"
@@ -72,7 +72,7 @@ const Collapses = () => {
                   </CCard>
                 </CCollapse>
               </div>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -85,7 +85,7 @@ const Collapses = () => {
             <p className="text-body-secondary small">
               A <code>&lt;CButton&gt;</code> can show and hide multiple elements.
             </p>
-            <DocsExample href="components/collapse#multiple-targets">
+            
               <CButton color="primary" onClick={() => setVisibleA(!visibleA)}>
                 Toggle first element
               </CButton>
@@ -125,7 +125,7 @@ const Collapses = () => {
                   </CCollapse>
                 </CCol>
               </CRow>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

@@ -29,7 +29,7 @@ import {
   cilUserFollow,
 } from '@coreui/icons'
 import { CChartBar, CChartLine } from '@coreui/react-chartjs'
-import { DocsExample } from 'src/components'
+
 
 import WidgetsBrand from './WidgetsBrand'
 import WidgetsDropdown from './WidgetsDropdown'
@@ -41,10 +41,10 @@ const Widgets = () => {
     <CCard className="mb-4">
       <CCardHeader>Widgets</CCardHeader>
       <CCardBody>
-        <DocsExample href="components/widgets/#cwidgetstatsa">
+        
           <WidgetsDropdown />
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsb">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={12} sm={6} xl={4} xxl={3}>
               <CWidgetStatsB
@@ -79,8 +79,8 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsb">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={12} sm={6} xl={4} xxl={3}>
               <CWidgetStatsB
@@ -123,8 +123,8 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatse">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol sm={4} md={3} xl={2}>
               <CWidgetStatsE
@@ -577,8 +577,8 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsf">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={12} sm={6} xl={4} xxl={3}>
               <CWidgetStatsF
@@ -613,8 +613,8 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsf">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={12} sm={6} xl={4} xxl={3}>
               <CWidgetStatsF
@@ -693,8 +693,8 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsf">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={12} sm={6} xl={4} xxl={3}>
               <CWidgetStatsF
@@ -733,14 +733,14 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsd">
+        
+        
           <WidgetsBrand />
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsd">
+        
+        
           <WidgetsBrand withCharts />
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsc">
+        
+        
           <CCardGroup className="mb-4">
             <CWidgetStatsC
               icon={<CIcon icon={cilPeople} height={36} />}
@@ -773,8 +773,8 @@ const Widgets = () => {
               progress={{ color: 'danger', value: 75 }}
             />
           </CCardGroup>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsc">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={6} lg={4} xxl={2}>
               <CWidgetStatsC
@@ -825,8 +825,8 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
-        <DocsExample href="components/widgets/#cwidgetstatsc">
+        
+        
           <CRow xs={{ gutter: 4 }}>
             <CCol xs={6} lg={4} xxl={2}>
               <CWidgetStatsC
@@ -889,7 +889,7 @@ const Widgets = () => {
               />
             </CCol>
           </CRow>
-        </DocsExample>
+        
       </CCardBody>
     </CCard>
   )

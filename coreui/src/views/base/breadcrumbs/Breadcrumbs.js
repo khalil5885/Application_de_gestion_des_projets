@@ -9,13 +9,13 @@ import {
   CRow,
   CLink,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Breadcrumbs = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/breadcrumb/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Breadcrumb</strong>
@@ -36,7 +36,7 @@ const Breadcrumbs = () => {
               </a>
               .
             </p>
-            <DocsExample href="components/breadcrumb">
+            
               <CBreadcrumb>
                 <CBreadcrumbItem>
                   <CLink href="#">Home</CLink>
@@ -64,7 +64,7 @@ const Breadcrumbs = () => {
                 </CBreadcrumbItem>
                 <CBreadcrumbItem active>Bootstrap</CBreadcrumbItem>
               </CBreadcrumb>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

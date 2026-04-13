@@ -10,6 +10,8 @@ import './scss/examples.scss'
 
 import ProtectedRoute from './components/ProtectedRoute'
 
+const SetupPassword = React.lazy(() => import('./views/pages/setup-password/SetupPassword'))
+
 // Containers
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
 
@@ -47,21 +49,24 @@ const App = () => {
         }
       >
         <Routes>
-          <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route exact path="/login" name="Login Page" element={<Login />} />
-          <Route exact path="/register" name="Register Page" element={<Register />} />
-          <Route exact path="/404" name="Page 404" element={<Page404 />} />
-          <Route exact path="/500" name="Page 500" element={<Page500 />} />
-          <Route
-            path="*"
-            name="Home"
-            element={
-              <ProtectedRoute>
-                <DefaultLayout />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
+  <Route index element={<Navigate to="/dashboard" replace />} />
+  <Route exact path="/login" name="Login Page" element={<Login />} />
+  <Route exact path="/register" name="Register Page" element={<Register />} />
+  <Route exact path="/404" name="Page 404" element={<Page404 />} />
+  <Route exact path="/500" name="Page 500" element={<Page500 />} />
+
+  {/* Public — no auth required */}
+  <Route exact path="/setup-password" name="Setup Password" element={<SetupPassword />} />
+
+  <Route
+    path="*"
+    element={
+      <ProtectedRoute>
+        <DefaultLayout />
+      </ProtectedRoute>
+    }
+  />
+</Routes>
       </Suspense>
     </HashRouter>
   )

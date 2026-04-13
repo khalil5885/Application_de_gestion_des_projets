@@ -1,0 +1,52 @@
+﻿[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 3839 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mbuild/[22m[32mindex.html                               [39m[1m[2m  1.26 kB[22m[1m[22m[2m Γöé gzip:   0.68 kB[22m
+[2mbuild/[22m[32massets/8-CQnrj2m9.jpg                    [39m[1m[2m 15.15 kB[22m[1m[22m
+[2mbuild/[22m[35massets/DefaultLayout-e3CUNOYS.css        [39m[1m[2m  2.96 kB[22m[1m[22m[2m Γöé gzip:   0.88 kB[22m
+[2mbuild/[22m[35massets/index-DEYoTyv_.css                [39m[1m[2m333.96 kB[22m[1m[22m[2m Γöé gzip:  45.71 kB[22m
+[2mbuild/[22m[36massets/cil-plus-D8mtC-W5.js              [39m[1m[2m  0.22 kB[22m[1m[22m[2m Γöé gzip:   0.16 kB[22m
+[2mbuild/[22m[36massets/cil-arrow-left-D66Kb3Zq.js        [39m[1m[2m  0.27 kB[22m[1m[22m[2m Γöé gzip:   0.21 kB[22m
+[2mbuild/[22m[36massets/cil-arrow-right-CuetXaPY.js       [39m[1m[2m  0.29 kB[22m[1m[22m[2m Γöé gzip:   0.21 kB[22m
+[2mbuild/[22m[36massets/CForm-DzwnCfZV.js                 [39m[1m[2m  0.39 kB[22m[1m[22m[2m Γöé gzip:   0.28 kB[22m
+[2mbuild/[22m[36massets/cil-magnifying-glass-COgjSVTM.js  [39m[1m[2m  0.56 kB[22m[1m[22m[2m Γöé gzip:   0.34 kB[22m
+[2mbuild/[22m[36massets/Calendar-BhiMAUIt.js              [39m[1m[2m  0.63 kB[22m[1m[22m[2m Γöé gzip:   0.37 kB[22m
+[2mbuild/[22m[36massets/CInputGroupText-D2sg63Eu.js       [39m[1m[2m  0.71 kB[22m[1m[22m[2m Γöé gzip:   0.37 kB[22m
+[2mbuild/[22m[36massets/CCardBody-DZOb60gP.js             [39m[1m[2m  0.75 kB[22m[1m[22m[2m Γöé gzip:   0.37 kB[22m
+[2mbuild/[22m[36massets/cil-user-Dlmw-Gem.js              [39m[1m[2m  0.88 kB[22m[1m[22m[2m Γöé gzip:   0.46 kB[22m
+[2mbuild/[22m[36massets/CAlert-BxS51WsI.js                [39m[1m[2m  0.92 kB[22m[1m[22m[2m Γöé gzip:   0.57 kB[22m
+[2mbuild/[22m[36massets/Page404-CEGhmy_C.js               [39m[1m[2m  0.98 kB[22m[1m[22m[2m Γöé gzip:   0.52 kB[22m
+[2mbuild/[22m[36massets/CFormTextarea-BkMpzLqz.js         [39m[1m[2m  0.99 kB[22m[1m[22m[2m Γöé gzip:   0.47 kB[22m
+[2mbuild/[22m[36massets/Page500-CczMyrfe.js               [39m[1m[2m  1.00 kB[22m[1m[22m[2m Γöé gzip:   0.53 kB[22m
+[2mbuild/[22m[36massets/Settings-BCLYLwRT.js              [39m[1m[2m  1.27 kB[22m[1m[22m[2m Γöé gzip:   0.53 kB[22m
+[2mbuild/[22m[36massets/CFormSelect-Bls7g67i.js           [39m[1m[2m  1.28 kB[22m[1m[22m[2m Γöé gzip:   0.59 kB[22m
+[2mbuild/[22m[36massets/CListGroupItem-RfHUyrLg.js        [39m[1m[2m  1.31 kB[22m[1m[22m[2m Γöé gzip:   0.59 kB[22m
+[2mbuild/[22m[36massets/Register-BRTu723I.js              [39m[1m[2m  1.46 kB[22m[1m[22m[2m Γöé gzip:   0.57 kB[22m
+[2mbuild/[22m[36massets/Activity-y4HdpxcT.js              [39m[1m[2m  1.46 kB[22m[1m[22m[2m Γöé gzip:   0.76 kB[22m
+[2mbuild/[22m[36massets/CRow-3G8fsj_I.js                  [39m[1m[2m  1.91 kB[22m[1m[22m[2m Γöé gzip:   0.69 kB[22m
+[2mbuild/[22m[36massets/Login-CoayIhoE.js                 [39m[1m[2m  2.31 kB[22m[1m[22m[2m Γöé gzip:   1.09 kB[22m
+[2mbuild/[22m[36massets/cil-trash-DepacfaD.js             [39m[1m[2m  5.38 kB[22m[1m[22m[2m Γöé gzip:   1.85 kB[22m
+[2mbuild/[22m[36massets/Dashboard-BWyGMMhf.js             [39m[1m[2m  6.73 kB[22m[1m[22m[2m Γöé gzip:   2.33 kB[22m
+[2mbuild/[22m[36massets/index.esm-_CMcm5ir.js             [39m[1m[2m 10.36 kB[22m[1m[22m[2m Γöé gzip:   3.56 kB[22m
+[2mbuild/[22m[36massets/TaskManagement-Cgu-K94J.js        [39m[1m[2m 10.67 kB[22m[1m[22m[2m Γöé gzip:   3.83 kB[22m
+[2mbuild/[22m[36massets/ProjectDetail-sGZzKmSG.js         [39m[1m[2m 10.99 kB[22m[1m[22m[2m Γöé gzip:   3.79 kB[22m
+[2mbuild/[22m[36massets/UserManagement-D2ktZmc2.js        [39m[1m[2m 20.80 kB[22m[1m[22m[2m Γöé gzip:   7.23 kB[22m
+[2mbuild/[22m[36massets/ProjectManagement-Cj7ZLkVU.js     [39m[1m[2m 61.00 kB[22m[1m[22m[2m Γöé gzip:  19.91 kB[22m
+[2mbuild/[22m[36massets/DefaultLayout-DI9gDxd0.js         [39m[1m[2m 96.99 kB[22m[1m[22m[2m Γöé gzip:  29.72 kB[22m
+[2mbuild/[22m[36massets/proxy-Bp307JJx.js                 [39m[1m[2m125.75 kB[22m[1m[22m[2m Γöé gzip:  41.27 kB[22m
+[2mbuild/[22m[36massets/index-CII879Bt.js                 [39m[1m[33m571.88 kB[39m[22m[2m Γöé gzip: 197.78 kB[22m
+[32mΓ£ô built in 5.81s[39m
+node.exe : [33m
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([33m:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: 
+https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m

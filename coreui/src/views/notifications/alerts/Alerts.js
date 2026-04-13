@@ -9,13 +9,13 @@ import {
   CCol,
   CRow,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Alerts = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/alert/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Alert</strong>
@@ -28,7 +28,7 @@ const Alerts = () => {
               <a href="https://coreui.io/react/docs/components/alert#dismissing">dismissing prop</a>
               .
             </p>
-            <DocsExample href="components/alert">
+            
               <CAlert color="primary">A simple primary alert—check it out!</CAlert>
               <CAlert color="secondary">A simple secondary alert—check it out!</CAlert>
               <CAlert color="success">A simple success alert—check it out!</CAlert>
@@ -37,7 +37,7 @@ const Alerts = () => {
               <CAlert color="info">A simple info alert—check it out!</CAlert>
               <CAlert color="light">A simple light alert—check it out!</CAlert>
               <CAlert color="dark">A simple dark alert—check it out!</CAlert>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -51,7 +51,7 @@ const Alerts = () => {
               Use the <code>&lt;CAlertLink&gt;</code> component to immediately give matching colored
               links inside any alert.
             </p>
-            <DocsExample href="components/alert#link-color">
+            
               <CAlert color="primary">
                 A simple primary alert with <CAlertLink href="#">an example link</CAlertLink>. Give
                 it a click if you like.
@@ -84,7 +84,7 @@ const Alerts = () => {
                 A simple dark alert with <CAlertLink href="#">an example link</CAlertLink>. Give it
                 a click if you like.
               </CAlert>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -98,7 +98,7 @@ const Alerts = () => {
               Alert can also incorporate supplementary components &amp; elements like heading,
               paragraph, and divider.
             </p>
-            <DocsExample href="components/alert#additional-content">
+            
               <CAlert color="success">
                 <CAlertHeading as="h4">Well done!</CAlertHeading>
                 <p>
@@ -112,7 +112,7 @@ const Alerts = () => {
                   tidy.
                 </p>
               </CAlert>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -125,7 +125,7 @@ const Alerts = () => {
             <p className="text-body-secondary small">
               Alerts can also be easily dismissed. Just add the <code>dismissible</code> prop.
             </p>
-            <DocsExample href="components/alert#dismissing">
+            
               <CAlert
                 color="warning"
                 dismissible
@@ -135,7 +135,7 @@ const Alerts = () => {
               >
                 <strong>Go right ahead</strong> and click that dimiss over there on the right.
               </CAlert>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

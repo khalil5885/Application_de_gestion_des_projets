@@ -13,13 +13,13 @@ import {
   CNavItem,
   CNavLink,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const Navs = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/nav-tabs/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Navs</strong> <small>Base navs</small>
@@ -31,7 +31,7 @@ const Navs = () => {
               overrides (for working with lists), some link padding for larger hit areas, and basic
               disabled styling.
             </p>
-            <DocsExample href="components/nav-tabs#base-nav">
+            
               <CNav>
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -50,7 +50,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
             <p className="text-body-secondary small">
               Classes are used throughout, so your markup can be super flexible. Use{' '}
               <code>&lt;ul&gt;</code>s like above, <code>&lt;ol&gt;</code> if the order of your
@@ -58,7 +58,7 @@ const Navs = () => {
               the .nav uses display: flex, the nav links behave the same as nav items would, but
               without the extra markup.
             </p>
-            <DocsExample href="components/nav-tabs#base-nav">
+            
               <CNav as="nav">
                 <CNavLink href="#" active>
                   Active
@@ -69,7 +69,7 @@ const Navs = () => {
                   Disabled
                 </CNavLink>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -90,7 +90,7 @@ const Navs = () => {
             <p className="text-body-secondary small">
               Centered with <code>.justify-content-center</code>:
             </p>
-            <DocsExample href="components/nav-tabs#horizontal-alignment">
+            
               <CNav className="justify-content-center">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -109,11 +109,11 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
             <p className="text-body-secondary small">
               Right-aligned with <code>.justify-content-end</code>:
             </p>
-            <DocsExample href="components/nav-tabs#base-nav">
+            
               <CNav className="justify-content-end">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -132,7 +132,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -147,7 +147,7 @@ const Navs = () => {
               <code>.flex-column</code> utility. Need to stack them on some viewports but not
               others? Use the responsive versions (e.g., <code>.flex-sm-column</code>).
             </p>
-            <DocsExample href="components/nav-tabs#vertical">
+            
               <CNav className="flex-column">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -166,7 +166,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -180,7 +180,7 @@ const Navs = () => {
               Takes the basic nav from above and adds the <code>variant=&#34;tabs&#34;</code> class
               to generate a tabbed interface
             </p>
-            <DocsExample href="components/nav-tabs#tabs">
+            
               <CNav variant="tabs">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -199,7 +199,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -212,7 +212,7 @@ const Navs = () => {
             <p className="text-body-secondary small">
               Take that same HTML, but use <code>variant=&#34;pills&#34;</code> instead:
             </p>
-            <DocsExample href="components/nav-tabs#pills">
+            
               <CNav variant="pills">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -231,7 +231,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -247,7 +247,7 @@ const Navs = () => {
               <code>.nav-item</code>s, use <code>layout=&#34;fill&#34;</code>. Notice that all
               horizontal space is occupied, but not every nav item has the same width.
             </p>
-            <DocsExample href="components/nav-tabs#fill-and-justify">
+            
               <CNav variant="pills" layout="fill">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -266,13 +266,13 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
             <p className="text-body-secondary small">
               For equal-width elements, use <code>layout=&#34;justified&#34;</code>. All horizontal
               space will be occupied by nav links, but unlike the .nav-fill above, every nav item
               will be the same width.
             </p>
-            <DocsExample href="components/nav-tabs#fill-and-justify">
+            
               <CNav variant="pills" layout="justified">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -291,7 +291,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -308,7 +308,7 @@ const Navs = () => {
               the example below, our nav will be stacked on the lowest breakpoint, then adapt to a
               horizontal layout that fills the available width starting from the small breakpoint.
             </p>
-            <DocsExample href="components/nav-tabs#working-with-flex-utilities">
+            
               <CNav as="nav" variant="pills" className="flex-column flex-sm-row">
                 <CNavLink href="#" active>
                   Active
@@ -319,7 +319,7 @@ const Navs = () => {
                   Disabled
                 </CNavLink>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -329,7 +329,7 @@ const Navs = () => {
             <strong>React Navs</strong> <small>Tabs with dropdowns</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="components/nav-tabs#tabs-with-dropdowns">
+            
               <CNav>
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -353,7 +353,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -363,7 +363,7 @@ const Navs = () => {
             <strong>React Navs</strong> <small>Pills with dropdowns</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="components/nav-tabs#pills-with-dropdowns">
+            
               <CNav variant="pills">
                 <CNavItem>
                   <CNavLink href="#" active>
@@ -387,7 +387,7 @@ const Navs = () => {
                   </CNavLink>
                 </CNavItem>
               </CNav>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

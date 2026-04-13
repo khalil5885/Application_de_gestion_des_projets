@@ -27,6 +27,7 @@ const routes = [
 
   // Dashboard
   { path: '/dashboard', name: 'Dashboard', element: Dashboard },
+  
 
   // Admin — Users
   { path: '/admin/users', name: 'User Management', element: UserManagement },

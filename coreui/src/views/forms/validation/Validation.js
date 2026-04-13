@@ -16,7 +16,7 @@ import {
   CInputGroupText,
   CRow,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const CustomStyles = () => {
   const [validated, setValidated] = useState(false)
@@ -253,7 +253,7 @@ const Validation = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="forms/validation/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>Validation</strong> <small>Custom styles</small>
@@ -272,7 +272,7 @@ const Validation = () => {
               Custom feedback styles apply custom colors, borders, focus styles, and background
               icons to better communicate feedback.{' '}
             </p>
-            <DocsExample href="forms/validation">{CustomStyles()}</DocsExample>
+            {CustomStyles()}
           </CCardBody>
         </CCard>
       </CCol>
@@ -292,7 +292,7 @@ const Validation = () => {
               While these feedback styles cannot be styled with CSS, you can still customize the
               feedback text through JavaScript.
             </p>
-            <DocsExample href="forms/validation#browser-defaults">{BrowserDefaults()}</DocsExample>
+            {BrowserDefaults()}
           </CCardBody>
         </CCard>
       </CCol>
@@ -313,7 +313,7 @@ const Validation = () => {
               attribute allows more than one <code>id</code> to be referenced, in case the field
               already points to additional form text).
             </p>
-            <DocsExample href="forms/validation#server-side">
+            
               <CForm className="row g-3 needs-validation">
                 <CCol md={4}>
                   <CFormLabel htmlFor="validationServer01">Email</CFormLabel>
@@ -386,7 +386,7 @@ const Validation = () => {
                   </CButton>
                 </CCol>
               </CForm>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -410,7 +410,7 @@ const Validation = () => {
                 <code>&lt;CFormCheck&gt;</code>s
               </li>
             </ul>
-            <DocsExample href="forms/validation#supported-elements">
+            
               <CForm validated={true}>
                 <div className="mb-3">
                   <CFormLabel htmlFor="validationTextarea" className="form-label">
@@ -476,7 +476,7 @@ const Validation = () => {
                   </CButton>
                 </div>
               </CForm>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -493,7 +493,7 @@ const Validation = () => {
               our column classes have this already, but your project may require an alternative
               setup.
             </p>
-            <DocsExample href="forms/validation#tooltips">{Tooltips()}</DocsExample>
+            {Tooltips()}
           </CCardBody>
         </CCard>
       </CCol>

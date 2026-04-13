@@ -19,13 +19,13 @@ import {
   CInputGroupText,
   CRow,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 const InputGroup = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="forms/input-group/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Input group</strong> <small>Basic example</small>
@@ -36,7 +36,7 @@ const InputGroup = () => {
               sides of an input. Remember to place <code>&lt;CFormLabel&gt;</code>s outside the
               input group.
             </p>
-            <DocsExample href="forms/input-group">
+            
               <CInputGroup className="mb-3">
                 <CInputGroupText id="basic-addon1">@</CInputGroupText>
                 <CFormInput
@@ -72,7 +72,7 @@ const InputGroup = () => {
                 <CInputGroupText>With textarea</CInputGroupText>
                 <CFormTextarea aria-label="With textarea"></CFormTextarea>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -87,7 +87,7 @@ const InputGroup = () => {
               custom form field validation within an input group. You may disable this with{' '}
               <code>.flex-nowrap</code>.
             </p>
-            <DocsExample href="forms/input-group#wrapping">
+            
               <CInputGroup className="flex-nowrap">
                 <CInputGroupText id="addon-wrapping">@</CInputGroupText>
                 <CFormInput
@@ -96,7 +96,7 @@ const InputGroup = () => {
                   aria-describedby="addon-wrapping"
                 />
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -114,7 +114,7 @@ const InputGroup = () => {
             <p className="text-body-secondary small">
               <strong>Sizing on the individual input group elements isn&#39;tsupported.</strong>
             </p>
-            <DocsExample href="forms/input-group#sizing">
+            
               <CInputGroup size="sm" className="mb-3">
                 <CInputGroupText id="inputGroup-sizing-sm">Small</CInputGroupText>
                 <CFormInput
@@ -136,7 +136,7 @@ const InputGroup = () => {
                   aria-describedby="inputGroup-sizing-lg"
                 />
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -149,7 +149,7 @@ const InputGroup = () => {
             <p className="text-body-secondary small">
               Place any checkbox or radio option within an input group&#39;s addon instead of text.
             </p>
-            <DocsExample href="forms/input-group#checkboxes-and-radios">
+            
               <CInputGroup className="mb-3">
                 <CInputGroupText>
                   <CFormCheck
@@ -170,7 +170,7 @@ const InputGroup = () => {
                 </CInputGroupText>
                 <CFormInput aria-label="Text input with radio button" />
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -185,13 +185,13 @@ const InputGroup = () => {
               styles are only available for input groups with a single{' '}
               <code>&lt;CFormInput&gt;</code>.
             </p>
-            <DocsExample href="forms/input-group#multiple-inputs">
+            
               <CInputGroup>
                 <CInputGroupText>First and last name</CInputGroupText>
                 <CFormInput aria-label="First name" />
                 <CFormInput aria-label="Last name" />
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -205,7 +205,7 @@ const InputGroup = () => {
               Multiple add-ons are supported and can be mixed with checkbox and radio input
               versions..
             </p>
-            <DocsExample href="forms/input-group#multiple-addons">
+            
               <CInputGroup className="mb-3">
                 <CInputGroupText>$</CInputGroupText>
                 <CInputGroupText>0.00</CInputGroupText>
@@ -216,7 +216,7 @@ const InputGroup = () => {
                 <CInputGroupText>$</CInputGroupText>
                 <CInputGroupText>0.00</CInputGroupText>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -230,7 +230,7 @@ const InputGroup = () => {
               Multiple add-ons are supported and can be mixed with checkbox and radio input
               versions..
             </p>
-            <DocsExample href="forms/input-group#button-addons">
+            
               <CInputGroup className="mb-3">
                 <CButton type="button" color="secondary" variant="outline" id="button-addon1">
                   Button
@@ -272,7 +272,7 @@ const InputGroup = () => {
                   Button
                 </CButton>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -282,7 +282,7 @@ const InputGroup = () => {
             <strong>React Input group</strong> <small>Buttons with dropdowns</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/input-group#buttons-with-dropdowns">
+            
               <CInputGroup className="mb-3">
                 <CDropdown variant="input-group">
                   <CDropdownToggle color="secondary" variant="outline">
@@ -340,7 +340,7 @@ const InputGroup = () => {
                   </CDropdownMenu>
                 </CDropdown>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -350,7 +350,7 @@ const InputGroup = () => {
             <strong>React Input group</strong> <small>Segmented buttons</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/input-group#segmented-buttons">
+            
               <CInputGroup className="mb-3">
                 <CDropdown variant="input-group">
                   <CButton type="button" color="secondary" variant="outline">
@@ -383,7 +383,7 @@ const InputGroup = () => {
                   </CDropdownMenu>
                 </CDropdown>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -393,7 +393,7 @@ const InputGroup = () => {
             <strong>React Input group</strong> <small>Custom select</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/input-group#custom-select">
+            
               <CInputGroup className="mb-3">
                 <CInputGroupText as="label" htmlFor="inputGroupSelect01">
                   Options
@@ -438,7 +438,7 @@ const InputGroup = () => {
                   Button
                 </CButton>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -448,7 +448,7 @@ const InputGroup = () => {
             <strong>React Input group</strong> <small>Custom file input</small>
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="forms/input-group#custom-file-input">
+            
               <CInputGroup className="mb-3">
                 <CInputGroupText as="label" htmlFor="inputGroupFile01">
                   Upload
@@ -493,7 +493,7 @@ const InputGroup = () => {
                   Button
                 </CButton>
               </CInputGroup>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>

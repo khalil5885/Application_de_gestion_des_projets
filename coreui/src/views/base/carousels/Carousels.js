@@ -9,7 +9,7 @@ import {
   CCol,
   CRow,
 } from '@coreui/react'
-import { DocsComponents, DocsExample } from 'src/components'
+
 
 import AngularImg from 'src/assets/images/angular.jpg'
 import ReactImg from 'src/assets/images/react.jpg'
@@ -25,14 +25,14 @@ const Carousels = () => {
   return (
     <CRow>
       <CCol xs={12}>
-        <DocsComponents href="components/carousel/" />
+        
         <CCard className="mb-4">
           <CCardHeader>
             <strong>Carousel</strong> <small>Slide only</small>
           </CCardHeader>
           <CCardBody>
             <p className="text-body-secondary small">Here’s a carousel with slides</p>
-            <DocsExample href="components/carousel">
+            
               <CCarousel>
                 <CCarouselItem>
                   <img className="d-block w-100" src={ReactImg} alt="slide 1" />
@@ -44,7 +44,7 @@ const Carousels = () => {
                   <img className="d-block w-100" src={VueImg} alt="slide 3" />
                 </CCarouselItem>
               </CCarousel>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -57,7 +57,7 @@ const Carousels = () => {
             <p className="text-body-secondary small">
               Adding in the previous and next controls by <code>controls</code> property.
             </p>
-            <DocsExample href="components/carousel/#with-controls">
+            
               <CCarousel controls>
                 <CCarouselItem>
                   <img className="d-block w-100" src={ReactImg} alt="slide 1" />
@@ -69,7 +69,7 @@ const Carousels = () => {
                   <img className="d-block w-100" src={VueImg} alt="slide 3" />
                 </CCarouselItem>
               </CCarousel>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -82,7 +82,7 @@ const Carousels = () => {
             <p className="text-body-secondary small">
               You can attach the indicators to the carousel, lengthwise the controls, too.
             </p>
-            <DocsExample href="components/carousel/#with-indicators">
+            
               <CCarousel controls indicators>
                 <CCarouselItem>
                   <img className="d-block w-100" src={ReactImg} alt="slide 1" />
@@ -94,7 +94,7 @@ const Carousels = () => {
                   <img className="d-block w-100" src={VueImg} alt="slide 3" />
                 </CCarouselItem>
               </CCarousel>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -112,7 +112,7 @@ const Carousels = () => {
               with <code>.d-none</code> and draw them back on medium-sized devices with{' '}
               <code>.d-md-block</code>.
             </p>
-            <DocsExample href="components/carousel/#with-captions">
+            
               <CCarousel controls indicators>
                 <CCarouselItem>
                   <img className="d-block w-100" src={ReactImg} alt="slide 1" />
@@ -136,7 +136,7 @@ const Carousels = () => {
                   </CCarouselCaption>
                 </CCarouselItem>
               </CCarousel>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -150,7 +150,7 @@ const Carousels = () => {
               Add <code>transition=&#34;crossfade&#34;</code> to your carousel to animate slides
               with a fade transition instead of a slide.
             </p>
-            <DocsExample href="components/carousel/#crossfade">
+            
               <CCarousel controls transition="crossfade">
                 <CCarouselItem>
                   <img className="d-block w-100" src={ReactImg} alt="slide 1" />
@@ -162,7 +162,7 @@ const Carousels = () => {
                   <img className="d-block w-100" src={VueImg} alt="slide 3" />
                 </CCarouselItem>
               </CCarousel>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
@@ -178,7 +178,7 @@ const Carousels = () => {
               with the <code>filter</code> CSS property. Captions and controls have additional Sass
               variables that customize the <code>color</code> and <code>background-color</code>.
             </p>
-            <DocsExample href="components/carousel/#dark-variant">
+            
               <CCarousel controls indicators dark>
                 <CCarouselItem>
                   <img className="d-block w-100" src={slidesLight[0]} alt="slide 1" />
@@ -202,7 +202,7 @@ const Carousels = () => {
                   </CCarouselCaption>
                 </CCarouselItem>
               </CCarousel>
-            </DocsExample>
+            
           </CCardBody>
         </CCard>
       </CCol>
