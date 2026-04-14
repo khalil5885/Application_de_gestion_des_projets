@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
 import {
   CContainer,
@@ -10,11 +10,8 @@ import {
   CHeader,
   CHeaderNav,
   CHeaderToggler,
-  CNavLink,
-  CNavItem,
-  useColorModes,
-  CFormInput,
   CBadge,
+  useColorModes,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
@@ -23,7 +20,6 @@ import {
   cilMenu,
   cilMoon,
   cilSun,
-  cilSearch,
   cilCheckCircle,
   cilWarning,
   cilTask,
@@ -44,9 +40,9 @@ const typeColors = { success: 'success', warning: 'warning', info: 'info' }
 const AppHeader = () => {
   const headerRef = useRef()
   const navigate = useNavigate()
-  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
+  const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,7 +56,7 @@ const AppHeader = () => {
   return (
     <CHeader position="sticky" className="mb-4 p-0" ref={headerRef}>
       <CContainer className="border-bottom px-4" fluid>
-        {/* Sidebar toggler */}
+        {/* Left Side: Sidebar Toggler */}
         <CHeaderToggler
           onClick={() => dispatch({ type: 'set', sidebarShow: !sidebarShow })}
           style={{ marginInlineStart: '-14px' }}
@@ -68,34 +64,23 @@ const AppHeader = () => {
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
 
-        {/* Search Bar */}
-        <div className="d-none d-md-flex align-items-center ms-3 me-auto" style={{ maxWidth: 280 }}>
-          <div className="position-relative w-100">
-            <CIcon
-              icon={cilSearch}
-              className="position-absolute text-body-secondary"
-              style={{ top: '50%', left: 10, transform: 'translateY(-50%)', pointerEvents: 'none' }}
-              size="sm"
-            />
-            <CFormInput
-              placeholder="Search projects, tasks..."
-              className="ps-4 rounded-4"
-              style={{ fontSize: 13 }}
-            />
-          </div>
-        </div>
+        {/* SPACER: This replaces the search bar and pushes 
+          everything after it to the right side.
+        */}
+        <div className="me-auto"></div>
 
-        {/* Right side nav */}
-        <CHeaderNav className="ms-auto ms-md-0">
-          {/* Notifications */}
+        {/* Right Side Navigation Group */}
+        <CHeaderNav className="d-flex align-items-center">
+          
+          {/* 1. Notifications Dropdown */}
           <CDropdown variant="nav-item" placement="bottom-end">
             <CDropdownToggle caret={false} className="position-relative py-1 px-2">
               <CIcon icon={cilBell} size="lg" />
               <CBadge
                 color="danger"
                 shape="rounded-pill"
-                className="position-absolute top-0 end-0"
-                style={{ fontSize: 9, padding: '2px 5px' }}
+                className="position-absolute top--2 start-10 translate-middle"
+                style={{ fontSize: 10, padding: '2px 5px' }}
               >
                 {notifications.length}
               </CBadge>
@@ -108,7 +93,7 @@ const AppHeader = () => {
                 <CDropdownItem key={n.id} className="d-flex align-items-start gap-2 py-2">
                   <CIcon icon={n.icon} className={`text-${typeColors[n.type]} mt-1 flex-shrink-0`} size="sm" />
                   <div className="flex-grow-1">
-                    <div className="small">{n.text}</div>
+                    <div className="small text-wrap">{n.text}</div>
                     <div className="text-body-secondary" style={{ fontSize: 11 }}>{n.time}</div>
                   </div>
                 </CDropdownItem>
@@ -124,15 +109,15 @@ const AppHeader = () => {
               </div>
             </CDropdownMenu>
           </CDropdown>
-        </CHeaderNav>
 
-        <CHeaderNav>
+          {/* Vertical Divider */}
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
-          {/* Theme switcher */}
+
+          {/* 2. Theme Switcher */}
           <CDropdown variant="nav-item" placement="bottom-end">
-            <CDropdownToggle caret={false} className="d-flex align-items-center mt-1">
+            <CDropdownToggle caret={false} className="d-flex align-items-center">
               {colorMode === 'dark' ? (
                 <CIcon icon={cilMoon} size="lg" />
               ) : colorMode === 'auto' ? (
@@ -146,7 +131,6 @@ const AppHeader = () => {
                 active={colorMode === 'light'}
                 className="d-flex align-items-center"
                 as="button"
-                type="button"
                 onClick={() => setColorMode('light')}
               >
                 <CIcon className="me-2" icon={cilSun} size="lg" /> Light
@@ -155,7 +139,6 @@ const AppHeader = () => {
                 active={colorMode === 'dark'}
                 className="d-flex align-items-center"
                 as="button"
-                type="button"
                 onClick={() => setColorMode('dark')}
               >
                 <CIcon className="me-2" icon={cilMoon} size="lg" /> Dark
@@ -164,20 +147,25 @@ const AppHeader = () => {
                 active={colorMode === 'auto'}
                 className="d-flex align-items-center"
                 as="button"
-                type="button"
                 onClick={() => setColorMode('auto')}
               >
                 <CIcon className="me-2" icon={cilContrast} size="lg" /> Auto
               </CDropdownItem>
             </CDropdownMenu>
           </CDropdown>
+
+          {/* Vertical Divider */}
           <li className="nav-item py-1">
             <div className="vr h-100 mx-2 text-body text-opacity-75"></div>
           </li>
-          {/* User avatar dropdown */}
+
+          {/* 3. User Avatar */}
           <AppHeaderDropdown />
+          
         </CHeaderNav>
       </CContainer>
+
+      {/* Breadcrumb Section */}
       <CContainer className="px-4" fluid>
         <AppBreadcrumb />
       </CContainer>
