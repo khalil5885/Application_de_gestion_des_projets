@@ -206,51 +206,58 @@ const ProjectDetail = () => {
   const { id }      = useParams()
   const navigate    = useNavigate()
   const [project, setProject]           = useState(null)
+  const [tasks, setTasks]               = useState([])
   const [loading, setLoading]           = useState(true)
   const [error, setError]               = useState(null)
   const [selectedRole, setSelectedRole] = useState('all')
   const [viewMode, setViewMode]         = useState('grid')
 
-  const fetchData = async () => {
-    try {
-      const res = await api.get(`/api/admin/projects/${id}`)
-      setProject(res.data.data)
-    } catch {
-      setError('Failed to load project.')
-    } finally {
-      setLoading(false)
-    }
-  }
+const fetchData = async () => {
+  try {
+    const projectRes = await api.get(`/api/admin/projects/${id}`)
+    setProject(projectRes.data.data)
 
+    // Use nested route, not query param — returns tree structure
+    const tasksRes = await api.get(`/api/admin/projects/${id}/tasks`)
+    const tasksArray = tasksRes.data.data || []
+
+    setTasks(tasksArray)
+    
+  } catch (err) {
+    console.error('Fetch error:', err)
+    setError('Failed to load project.')
+  } finally {
+    setLoading(false)
+  }
+}
   useEffect(() => { fetchData() }, [id])
 
   const { assignedColumns, unassignedColumn } = useMemo(() => {
-    if (!project) return {
-      assignedColumns: {},
-      unassignedColumn: { name: 'Unassigned', tasks: [], role: null },
+  if (!project) return {
+    assignedColumns: {},
+    unassignedColumn: { name: 'Unassigned', tasks: [], role: null },
+  }
+
+  const assigned = {}
+  const unassigned = { name: 'Unassigned', tasks: [], role: null }
+
+  // Initialize columns for each member
+  project.members?.forEach(m => {
+    assigned[m.id] = { name: m.name, tasks: [], role: m.pivot?.project_role }
+  })
+
+  // Distribute tasks - tasks is now a flat array, not a tree
+  tasks.forEach(task => {
+    const memberId = task.assigned_to?.id
+    if (memberId && assigned[memberId]) {
+      assigned[memberId].tasks.push({ ...task, assignee_name: assigned[memberId].name })
+    } else {
+      unassigned.tasks.push(task)
     }
+  })
 
-    const assigned   = {}
-    const unassigned = { name: 'Unassigned', tasks: [], role: null }
-
-    // Initialize columns for each member
-    project.members.forEach(m => {
-      assigned[m.id] = { name: m.name, tasks: [], role: m.pivot?.project_role }
-    })
-
-    // Distribute tasks and attach member names for the mini-avatars
-    project.tasks.forEach(task => {
-      const memberId = task.assigned_to
-      if (memberId && assigned[memberId]) {
-        const taskWithMember = { ...task, assignee_name: assigned[memberId].name }
-        assigned[memberId].tasks.push(taskWithMember)
-      } else {
-        unassigned.tasks.push(task)
-      }
-    })
-
-    return { assignedColumns: assigned, unassignedColumn: unassigned }
-  }, [project])
+  return { assignedColumns: assigned, unassignedColumn: unassigned }
+}, [project, tasks])
 
   const filteredAssigned = useMemo(() => {
     if (selectedRole === 'all') return assignedColumns
@@ -271,8 +278,12 @@ const ProjectDetail = () => {
     if (!taskId) return
     try {
       const userId = targetUserId === 'unassigned' ? null : targetUserId
-      await api.patch(`/api/admin/tasks/${taskId}/assignEmployee`, { user_id: userId })
-      fetchData()
+      if(userId) {
+        await api.patch(`/api/admin/tasks/${taskId}/assignEmployee`, { user_id: userId })
+      } else {
+        await api.patch(`/api/admin/tasks/${taskId}/unassignEmployee`, { user_id: null })
+      }
+        fetchData()
     } catch { console.error('Assignment failed') }
   }
 

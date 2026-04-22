@@ -11,6 +11,7 @@ import {
   cilCalendar,
   cilHistory,
   cilSettings,
+  cilLayers,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -39,6 +40,12 @@ const _nav = [
         name: 'All Projects',
         to: '/admin/projects',
       },
+      {
+  component: CNavItem,
+  name: 'Project Types',
+  to: '/admin/project-types',
+  
+},
     ],
   },
   {
@@ -77,6 +84,7 @@ const _nav = [
     to: '/settings',
     icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
   },
+  
 ]
 
 export default _nav

@@ -14,6 +14,8 @@ const UserManagement = React.lazy(() => import('./views/admin/UserManagement'))
 const ProjectManagement = React.lazy(() => import('./views/admin/project/ProjectManagement'))
 const ProjectDetail = React.lazy(() => import('./views/admin/project/ProjectDetail'))
 const TaskManagement = React.lazy(() => import('./views/admin/project/TaskManagement'))
+const ProjectTypeManagement = React.lazy(() => import('./views/admin/project/ProjectTypeManagement'))
+const Projecttypepage = React.lazy(() => import('./views/admin/project/Projecttypepage'))
 
 // ── Workspace ─────────────────────────────────────────────────────────────────
 const Calendar = React.lazy(() => import('./views/workspace/calendar/Calendar'))
@@ -21,6 +23,7 @@ const Activity = React.lazy(() => import('./views/workspace/activity/Activity'))
 
 // ── Settings ──────────────────────────────────────────────────────────────────
 const Settings = React.lazy(() => import('./views/settings/Settings'))
+
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
@@ -36,6 +39,8 @@ const routes = [
   { path: '/admin/projects', name: 'Project Management', element: ProjectManagement },
   { path: '/admin/projects/:id', name: 'Project Detail', element: ProjectDetail },
   { path: '/admin/projects/:id/tasks', name: 'Task Management', element: TaskManagement },
+  { path: '/admin/project-types', name: 'Project Types', element: ProjectTypeManagement },
+  { path: '/admin/project-typess', name: 'Project Types', element: Projecttypepage },
 
   // Workspace
   { path: '/workspace/calendar', name: 'Calendar', element: Calendar },

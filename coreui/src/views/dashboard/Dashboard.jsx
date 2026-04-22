@@ -269,58 +269,68 @@ const ClientDashboard = ({ data }) => (
 )
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
-
 const Dashboard = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const role     = user?.global_role
-
-  const [data, setData]       = useState(null)
+  
+  const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError]     = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    if (!role) return
-    api.get(getEndpoint(role))
-      .then(res => setData(res.data.data))
-      .catch(() => setError('Failed to load dashboard.'))
-      .finally(() => setLoading(false))
-  }, [role])
+    // 1. Identify User/Role from Context OR LocalStorage fallback
+    let currentRole = user?.global_role
+    if (!currentRole) {
+      const saved = localStorage.getItem('user')
+      if (saved) currentRole = JSON.parse(saved).global_role
+    }
+
+    if (!currentRole) {
+      setLoading(false)
+      return
+    }
+
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const endpoints = {
+          admin: '/api/admin/dashboard',
+          employee: '/api/employee/dashboard',
+          client: '/api/client/dashboard'
+        }
+        const res = await api.get(endpoints[currentRole])
+        setData(res.data.data)
+      } catch (err) {
+        setError('Failed to load dashboard.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [user])
+
+  if (loading) return <div className="text-center py-5"><CSpinner color="primary" /></div>
+  if (error) return <p className="text-danger p-4">{error}</p>
+
+  const activeUser = user || JSON.parse(localStorage.getItem('user'))
+  const role = activeUser?.global_role
 
   return (
-    <>
-      {/* Welcome Banner */}
-      <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+    <div className="p-4">
+      <div className="d-flex justify-content-between align-items-center mb-4">
         <div>
-          <h4 className="fw-bold mb-1">Welcome back, {user?.name || 'there'} 👋</h4>
-          <p className="text-body-secondary mb-0">Here&apos;s what&apos;s happening in your workspace today.</p>
+          <h4 className="fw-bold mb-1">Welcome back, {activeUser?.name || 'User'} 👋</h4>
+          <p className="text-body-secondary mb-0">Workspace: {role?.toUpperCase()}</p>
         </div>
-        {role === 'admin' && (
-          <div className="d-flex gap-2 flex-wrap">
-            <CButton color="primary" className="d-flex align-items-center gap-2"
-              onClick={() => navigate('/admin/projects')}>
-              <CIcon icon={cilPlus} /> Create Project
-            </CButton>
-            <CButton color="secondary" variant="outline" className="d-flex align-items-center gap-2"
-              onClick={() => navigate('/admin/users')}>
-              <CIcon icon={cilPeople} /> Manage Users
-            </CButton>
-          </div>
-        )}
       </div>
 
-      {loading && (
-        <div className="text-center py-5">
-          <CSpinner color="primary" />
-        </div>
-      )}
-
-      {error && <p className="text-danger">{error}</p>}
-
-      {!loading && !error && data && role === 'admin'    && <AdminDashboard    data={data} navigate={navigate} />}
-      {!loading && !error && data && role === 'employee' && <EmployeeDashboard data={data} navigate={navigate} />}
-      {!loading && !error && data && role === 'client'   && <ClientDashboard   data={data} />}
-    </>
+      {data && role === 'admin' && <AdminDashboard data={data} navigate={navigate} />}
+      {data && role === 'employee' && <EmployeeDashboard data={data} navigate={navigate} />}
+      {data && role === 'client' && <ClientDashboard data={data} />}
+      
+      {!data && !loading && <p>No data available for your role.</p>}
+    </div>
   )
 }
 

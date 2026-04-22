@@ -18,7 +18,7 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilPlus } from '@coreui/icons'
-import api from '../../../api'
+import api from '../../api'
 
 const STATUS_OPTIONS = [
   { value: 'pending',     label: 'Pending' },

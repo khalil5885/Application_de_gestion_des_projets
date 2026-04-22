@@ -12,8 +12,8 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilCheckCircle, cilUserPlus, cilX } from '@coreui/icons' // Added icons
 import { useAuth } from '../../context/AuthContext'
-import CreateUser from './CreateUser'
-import UserList from './UserList'
+import CreateUser from '../../components/user/CreateUser';
+import UserList from '../../components/user/UserList';
 
 const UserManagement = () => {
   const { user } = useAuth()

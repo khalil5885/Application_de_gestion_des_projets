@@ -24,9 +24,9 @@ import { useDroppable } from '@dnd-kit/core'
 
 import { useAuth } from '../../../context/AuthContext'
 import api from '../../../api'
-import ProjectCard from './ProjectCard'
-import CreateProjectModal from './CreateProjectModal'
-import ProjectDrawer from './ProjectDrawer'
+import CreateProjectModal from '../../../components/project/CreateProjectModal';
+import ProjectCard from '../../../components/project/ProjectCard';
+import ProjectDrawer from '../../../components/project/ProjectDrawer';
 
 const STATUS_COLUMNS = [
   { key: 'pending',     label: 'Pending',    color: 'warning' },
@@ -131,6 +131,7 @@ const ProjectManagement = () => {
         <CInputGroup>
           <CInputGroupText className="bg-transparent border-end-0">
             <CIcon icon={cilSearch} />
+            
           </CInputGroupText>
           <CFormInput 
             className="border-start-0 shadow-none"
