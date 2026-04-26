@@ -1,5 +1,5 @@
 /**
- * Sidebar Navigation — Project Manager SaaS
+ * Sidebar Navigation — Employee Role
  */
 
 import React from 'react'
@@ -7,58 +7,75 @@ import CIcon from '@coreui/icons-react'
 import {
   cilSpeedometer,
   cilBriefcase,
-  cilPeople,
+  cilTask,
   cilCalendar,
-  cilHistory,
+  cilCommentSquare,
   cilSettings,
-  cilLayers,
+  cilCheckCircle,
+  cilClock,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
 const _nav = [
-  // ── Main ────────────────────────────────────────────────
+  // ── Dashboard ─────────────────────────────────────────
   {
     component: CNavItem,
     name: 'Dashboard',
     to: '/dashboard',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
-    roles: ['admin', 'employee', 'client'],
   },
 
-  // ── Management ──────────────────────────────────────────
+  // ── My Work ─────────────────────────────────────────────
   {
     component: CNavTitle,
-    name: 'Management',
-    role:['admin']
+    name: 'My Work',
   },
   {
     component: CNavGroup,
-    name: 'Projects',
-    to: '/admin/projects',
+    name: 'My Projects',
+    to: '/employee/projects',
     icon: <CIcon icon={cilBriefcase} customClassName="nav-icon" />,
-    role:['admin'],
     items: [
       {
         component: CNavItem,
-        name: 'All Projects',
-        to: '/admin/projects',
-        role:['admin'],
+        name: 'Active Projects',
+        to: '/employee/projects',
       },
       {
-  component: CNavItem,
-  name: 'Project Types',
-  to: '/admin/project-types',
-  role:['admin'],
-  
-},
+        component: CNavItem,
+        name: 'Completed',
+        to: '/employee/projects/completed',
+      },
+    ],
+  },
+  {
+    component: CNavGroup,
+    name: 'My Tasks',
+    to: '/employee/tasks',
+    icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
+    items: [
+      {
+        component: CNavItem,
+        name: 'All Tasks',
+        to: '/employee/tasks',
+      },
+      {
+        component: CNavItem,
+        name: 'In Progress',
+        to: '/employee/tasks?status=in_progress',
+      },
+      {
+        component: CNavItem,
+        name: 'Completed',
+        to: '/employee/tasks?status=completed',
+      },
     ],
   },
   {
     component: CNavItem,
-    name: 'User Management',
-    to: '/admin/users',
-    icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
-    role:['admin'],
+    name: 'Comments',
+    to: '/employee/comments',
+    icon: <CIcon icon={cilCommentSquare} customClassName="nav-icon" />,
   },
 
   // ── Workspace ───────────────────────────────────────────
@@ -72,13 +89,6 @@ const _nav = [
     to: '/workspace/calendar',
     icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
   },
-  {
-    component: CNavItem,
-    name: 'Activity',
-    to: '/workspace/activity',
-    icon: <CIcon icon={cilHistory} customClassName="nav-icon" />,
-    role:['admin'],
-  },
 
   // ── Account ─────────────────────────────────────────────
   {
@@ -91,7 +101,6 @@ const _nav = [
     to: '/settings',
     icon: <CIcon icon={cilSettings} customClassName="nav-icon" />,
   },
-  
 ]
 
 export default _nav

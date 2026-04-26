@@ -37,7 +37,7 @@ const TemplateRow = ({ template, onSave, onDelete }) => {
     setSaving(true)
     try {
       await onSave(template.id, {
-        name:             form.name,
+        name:             form.title,
         description:      form.description,
         default_due_days: form.default_due_days,
         order:            form.order,
@@ -66,7 +66,7 @@ const TemplateRow = ({ template, onSave, onDelete }) => {
         }}
       >
         <input
-          value={form.name}
+          value={form.title}
           onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
           placeholder="Template name"
           style={inputStyle}
@@ -138,7 +138,7 @@ const TemplateRow = ({ template, onSave, onDelete }) => {
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{template.name}</div>
+        <div style={{ fontWeight: 700, fontSize: 13, marginBottom: 2 }}>{template.title}</div>
         {template.description && (
           <div style={{ fontSize: 11, color: 'var(--cui-secondary-color)', marginBottom: 4, lineHeight: 1.4 }}>
             {template.description}
@@ -173,22 +173,23 @@ const TemplateRow = ({ template, onSave, onDelete }) => {
 // ─── NewTemplateForm ───────────────────────────────────────────────────────────
 const NewTemplateForm = ({ projectTypeId, nextOrder, onCreated }) => {
   const [open, setOpen]   = useState(false)
-  const [form, setForm]   = useState({ name: '', description: '', default_due_days: '', order: nextOrder })
+  const [form, setForm]   = useState({ title: '', description: '', default_due_days: '', order: nextOrder })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => { setForm(f => ({ ...f, order: nextOrder })) }, [nextOrder])
 
   const handleSubmit = async () => {
-    if (!form.name.trim()) return
+    if (!form.title.trim()) return
     setSaving(true)
     try {
       await api.post(`/api/admin/project-types/${projectTypeId}/task-templates`, {
-        name:             form.name.trim(),
-        description:      form.description || null,
-        default_due_days: form.default_due_days ? parseInt(form.default_due_days) : null,
-        order:            parseInt(form.order) || nextOrder,
-      })
-      setForm({ name: '', description: '', default_due_days: '', order: nextOrder + 1 })
+    title:             form.title.trim(),
+    description:      form.description || null,
+    default_due_days: form.default_due_days ? parseInt(form.default_due_days) : null,
+    order:            parseInt(form.order) || nextOrder,
+    project_type_id:  projectTypeId,  
+})
+      setForm({ title: '', description: '', default_due_days: '', order: nextOrder + 1 })
       setOpen(false)
       onCreated()
     } finally { setSaving(false) }
@@ -227,9 +228,9 @@ const NewTemplateForm = ({ projectTypeId, nextOrder, onCreated }) => {
         NEW TEMPLATE
       </div>
       <input
-        value={form.name}
-        onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-        placeholder="Template name *"
+        value={form.title}
+        onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
+        placeholder="Template title *"
         style={inputStyle}
         autoFocus
         onKeyDown={e => e.key === 'Enter' && handleSubmit()}
@@ -264,7 +265,7 @@ const NewTemplateForm = ({ projectTypeId, nextOrder, onCreated }) => {
       </div>
       <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
         <button onClick={() => setOpen(false)} style={ghostBtn}>Cancel</button>
-        <button onClick={handleSubmit} disabled={saving || !form.name.trim()} style={primaryBtn}>
+        <button onClick={handleSubmit} disabled={saving || !form.title.trim()} style={primaryBtn}>
           {saving ? <CSpinner size="sm" /> : <><CIcon icon={cilPlus} style={{ width: 13 }} /> Create</>}
         </button>
       </div>
