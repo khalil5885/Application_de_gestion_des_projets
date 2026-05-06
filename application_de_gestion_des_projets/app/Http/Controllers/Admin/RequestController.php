@@ -1,0 +1,131 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\HandleRequestRequest;
+use App\Http\Resources\RequestResource;
+use App\Models\ActivityLog;
+use App\Models\Notification;
+use App\Models\Project;
+use App\Models\Request as UserRequest;
+use App\Models\Task;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class RequestController extends Controller
+{
+    public function index(Request $request)
+    {
+        return $this->handle(function () {
+            $requests = UserRequest::query()
+                ->with(['user', 'handledBy', 'requestable'])
+                ->latest()
+                ->paginate(20);
+
+            return $this->successResponse($this->paginate($requests, RequestResource::class), 'Requests retrieved successfully.');
+        });
+    }
+
+    public function approve(HandleRequestRequest $request, int $id)
+    {
+        return $this->handle(function () use ($request, $id) {
+            $userRequest = DB::transaction(function () use ($request, $id) {
+                $userRequest = UserRequest::query()
+                    ->with(['user', 'requestable'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                abort_unless($userRequest->status === 'pending', 422, 'Only pending requests can be handled.');
+
+                $userRequest->update([
+                    'status' => 'approved',
+                    'handled_by' => $request->user()->id,
+                    'handled_at' => now(),
+                ]);
+
+                if ($userRequest->type === 'extension') {
+                    $this->applyExtension($userRequest, $request->user());
+                }
+
+                ActivityLog::record($request->user(), 'request_approved', $userRequest, 'Request approved.');
+                $this->notifyEmployee($userRequest, 'request_approved', $request->validated('feedback'));
+
+                return $userRequest->fresh(['user', 'handledBy', 'requestable']);
+            });
+
+            return $this->successResponse(RequestResource::make($userRequest), 'Request approved successfully.');
+        });
+    }
+
+    public function reject(HandleRequestRequest $request, int $id)
+    {
+        return $this->handle(function () use ($request, $id) {
+            $userRequest = DB::transaction(function () use ($request, $id) {
+                $userRequest = UserRequest::query()
+                    ->with(['user', 'requestable'])
+                    ->lockForUpdate()
+                    ->findOrFail($id);
+
+                abort_unless($userRequest->status === 'pending', 422, 'Only pending requests can be handled.');
+
+                $payload = $userRequest->payload ?? [];
+                if ($request->filled('feedback')) {
+                    $payload['feedback'] = $request->validated('feedback');
+                }
+
+                $userRequest->update([
+                    'status' => 'rejected',
+                    'payload' => $payload,
+                    'handled_by' => $request->user()->id,
+                    'handled_at' => now(),
+                ]);
+
+                ActivityLog::record($request->user(), 'request_rejected', $userRequest, 'Request rejected.');
+                $this->notifyEmployee($userRequest, 'request_rejected', $request->validated('feedback'));
+
+                return $userRequest->fresh(['user', 'handledBy', 'requestable']);
+            });
+
+            return $this->successResponse(RequestResource::make($userRequest), 'Request rejected successfully.');
+        });
+    }
+
+    protected function applyExtension(UserRequest $userRequest, $actor): void
+    {
+        $requestedDeadline = $userRequest->payload['requested_deadline'] ?? null;
+        abort_unless($requestedDeadline, 422, 'Requested deadline is missing.');
+
+        $requestable = $userRequest->requestable;
+
+        if ($requestable instanceof Task) {
+            $requestable->update(['due_date' => $requestedDeadline]);
+            ActivityLog::record($actor, 'task_deadline_extended', $requestable, 'Task deadline extended.', [
+                'request_id' => $userRequest->id,
+                'due_date' => $requestedDeadline,
+            ]);
+            return;
+        }
+
+        if ($requestable instanceof Project) {
+            $requestable->update(['end_date' => $requestedDeadline]);
+            ActivityLog::record($actor, 'project_deadline_extended', $requestable, 'Project deadline extended.', [
+                'request_id' => $userRequest->id,
+                'end_date' => $requestedDeadline,
+            ]);
+        }
+    }
+
+    protected function notifyEmployee(UserRequest $userRequest, string $type, ?string $feedback = null): void
+    {
+        Notification::create([
+            'user_id' => $userRequest->user_id,
+            'type' => $type,
+            'data' => [
+                'request_id' => $userRequest->id,
+                'status' => $userRequest->status,
+                'feedback' => $feedback,
+            ],
+        ]);
+    }
+}

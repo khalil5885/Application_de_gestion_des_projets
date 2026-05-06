@@ -1,0 +1,36 @@
+# Dependencies
+/node_modules/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Build output
+/build/
+/dist/
+/.vite/
+
+# Logs and local build reports
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+build_output.txt
+build_vite.txt
+
+# Test and tool caches
+/coverage/
+.eslintcache
+
+# IDEs
+.idea/
+.vscode/
+.cursor/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+Desktop.ini
