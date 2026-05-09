@@ -15,11 +15,12 @@ import TaskReviewActions from '../../../components/task/TaskReviewActions'
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const TASK_COLUMNS = [
-  { key: 'todo',        label: 'To Do',       color: '#8a93a2' },
-  { key: 'in_progress', label: 'In Progress',  color: '#3b82f6' },
+  { key: 'todo',             label: 'To Do',           color: '#8a93a2' },
+  { key: 'in_progress',      label: 'In Progress',     color: '#3b82f6' },
+  { key: 'on_hold',          label: 'On Hold',         color: '#f59e0b' },
   { key: 'ready_for_review', label: 'Ready for Review', color: '#0ea5e9' },
-  { key: 'review',      label: 'In Review',    color: '#9333ea' },
-  { key: 'done',        label: 'Done',         color: '#22c55e' },
+  { key: 'done',             label: 'Done',            color: '#22c55e' },
+  
 ]
 
 const PRIORITY_OPTIONS = ['low', 'medium', 'high']
@@ -43,7 +44,14 @@ const CreateTaskModal = ({ visible, onClose, onCreated, projectId, members }) =>
   const [loading, setLoading]       = useState(false)
   const [globalError, setGlobalError] = useState(null)
 
-  useEffect(() => { if (visible) { setForm(initialForm); setErrors({}) } }, [visible])
+  useEffect(() => {
+    if (!visible) return
+    const timer = window.setTimeout(() => {
+      setForm(initialForm)
+      setErrors({})
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [visible])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -194,7 +202,10 @@ const TaskManagement = () => {
     finally { setLoading(false) }
   }, [id])
 
-  useEffect(() => { fetchData() }, [fetchData])
+  useEffect(() => {
+    const timer = window.setTimeout(fetchData, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchData])
 
   const tasksByStatus = useMemo(() => {
     const grouped = {}

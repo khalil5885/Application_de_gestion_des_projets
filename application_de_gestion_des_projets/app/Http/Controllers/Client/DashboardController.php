@@ -26,8 +26,8 @@ class DashboardController extends Controller
             return $this->successResponse([
                 'stats' => [
                     'total_projects'     => $projects->count(),
-                    'active_projects'    => $projects->where('status', 'active')->count(),
-                    'completed_projects' => $projects->where('status', 'completed')->count(),
+                    'active_projects'    => $projects->where('status', 'in_progress')->count(),
+                    'completed_projects' => $projects->where('status', 'done')->count(),
                     'avg_progress'       => round($projectsMapped->avg('progress') ?? 0),
                 ],
                 'projects' => $projectsMapped->values(),

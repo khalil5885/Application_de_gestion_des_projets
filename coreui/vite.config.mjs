@@ -11,9 +11,7 @@ export default defineConfig(() => {
     },
     css: {
       postcss: {
-        plugins: [
-          autoprefixer({}), // add options if needed
-        ],
+        plugins: [autoprefixer({})],
       },
     },
     esbuild: {
@@ -22,37 +20,38 @@ export default defineConfig(() => {
       exclude: [],
     },
     optimizeDeps: {
-      force: true,
+      // force: true  ← removed
+      include: [
+        '@coreui/react',
+        '@coreui/icons-react',
+        '@coreui/icons',
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'axios',
+      ],
       esbuildOptions: {
-        loader: {
-          '.js': 'jsx',
-        },
+        loader: { '.js': 'jsx' },
       },
     },
     plugins: [react()],
     resolve: {
       alias: [
-        {
-          find: '@',
-          replacement: path.resolve(__dirname, 'src'),
-        },
-        {
-          find: 'src/',
-          replacement: `${path.resolve(__dirname, 'src')}/`,
-        },
+        { find: '@', replacement: path.resolve(__dirname, 'src') },
+        { find: 'src/', replacement: `${path.resolve(__dirname, 'src')}/` },
       ],
       extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.scss'],
     },
     server: {
-  port: 3000,
-  proxy: {
-    '/api': {
-      target: 'http://project_manager.test', 
-      changeOrigin: true,
-      secure: false,
-      rewrite: (path) => path, // Ensures the /api prefix is preserved
+      port: 3000,
+      proxy: {
+        '/api': {
+          target: 'http://project_manager.test',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path,
+        },
+      },
     },
-  },
-}
   }
 })

@@ -16,12 +16,16 @@ const TaskBreakdown = ({ tasks = [] }) => {
 
   const done    = tasks.filter((t) => t.status === 'done').length
   const inProg  = tasks.filter((t) => t.status === 'in_progress').length
-  const pending = tasks.length - done - inProg
+  const todo    = tasks.filter((t) => t.status === 'todo').length
+  const onHold  = tasks.filter((t) => t.status === 'on_hold').length
+  const review  = tasks.filter((t) => t.status === 'ready_for_review').length
 
   const pills = [
-    { label: 'Done',       count: done,    color: '#2eb85c' },
-    { label: 'In Progress', count: inProg,  color: '#321fdb' },
-    { label: 'Pending',    count: pending, color: '#8a93a2' },
+    { label: 'Done',            count: done,    color: '#2eb85c' },
+    { label: 'In Progress',     count: inProg,  color: '#321fdb' },
+    { label: 'Ready for Review', count: review, color: '#0ea5e9' },
+    { label: 'To Do',           count: todo,    color: '#8a93a2' },
+    { label: 'On Hold',         count: onHold,  color: '#f59e0b' },
   ].filter((p) => p.count > 0)
 
   return (

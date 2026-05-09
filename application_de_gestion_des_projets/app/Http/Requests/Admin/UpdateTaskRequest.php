@@ -19,7 +19,7 @@ class UpdateTaskRequest extends FormRequest
             'parent_id' => ['nullable', 'exists:tasks,id'],
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['sometimes', Rule::in(['pending', 'todo', 'in_progress', 'ready_for_review', 'review', 'completed', 'done', 'blocked'])],
+            'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'ready_for_review', 'done', 'on_hold'])],
             'priority' => ['sometimes', Rule::in(['low', 'medium', 'high', 'urgent'])],
             'due_date' => ['nullable', 'date'],
             'assigned_to' => ['nullable', 'exists:users,id'],

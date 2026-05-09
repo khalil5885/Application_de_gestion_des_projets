@@ -21,14 +21,15 @@ import { cilPlus } from '@coreui/icons'
 import api from '../../api'
 
 const STATUS_OPTIONS = [
-  { value: 'pending',     label: 'Pending' },
-  { value: 'in_progress', label: 'In Progress' },
-  { value: 'completed',  label: 'Completed' },
-  { value: 'on_hold',    label: 'On Hold' },
+  { value: 'todo',             label: 'To Do' },
+  { value: 'in_progress',      label: 'In Progress' },
+  { value: 'ready_for_review', label: 'Ready for Review' },
+  { value: 'done',             label: 'Done' },
+  { value: 'on_hold',          label: 'On Hold' },
 ]
 
 const initialForm = {
-  name: '', description: '', status: 'pending',
+  name: '', description: '', status: 'todo',
   client_id: '', project_type_id: '', start_date: '', end_date: '',
 }
 

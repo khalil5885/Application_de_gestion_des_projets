@@ -16,7 +16,7 @@
   import api from '../../api'
 
   const PRIORITY_COLORS = { low: 'success', medium: 'warning', high: 'danger' }
-  const TASK_STATUS_COLORS = { todo: 'secondary', in_progress: 'primary', done: 'success', review: 'info' }
+  const TASK_STATUS_COLORS = { todo: 'secondary', in_progress: 'primary', ready_for_review: 'info', done: 'success', on_hold: 'danger' }
   const ROLE_OPTIONS = ['manager', 'developer', 'viewer']
   const ROLE_COLORS = { manager: '#9333ea', developer: '#3b82f6', viewer: '#9ca3af' }
 

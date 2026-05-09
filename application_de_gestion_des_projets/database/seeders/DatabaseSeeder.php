@@ -78,7 +78,7 @@ class DatabaseSeeder extends Seeder
             'description' => 'Client dashboard rebuild.',
             'client_id' => $client->id,
             'project_type_id' => $projectType->id,
-            'status' => 'pending',
+            'status' => 'todo',
             'start_date' => now()->toDateString(),
             'end_date' => now()->addMonth()->toDateString(),
             'progress' => 0,

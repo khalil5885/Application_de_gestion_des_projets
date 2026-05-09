@@ -25,7 +25,7 @@ const TaskReviewActions = ({ task, onReviewed, size = 'sm' }) => {
     setError(null)
     setLoadingAction('approve')
     try {
-      const response = await api.patch(`/api/tasks/${task.id}/approve`)
+      const response = await api.patch(`/api/admin/tasks/${task.id}/approve`)
       onReviewed?.(response.data?.data || { ...task, status: 'done' })
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to approve task.')
@@ -43,23 +43,20 @@ const TaskReviewActions = ({ task, onReviewed, size = 'sm' }) => {
     setError(null)
     setLoadingAction('reject')
     try {
-      await api.patch(`/api/tasks/${task.id}/reject`)
-      await api.post('/api/comments', {
-        task_id: task.id,
-        commentable_id: task.id,
-        commentable_type: 'task',
-        content: feedback.trim(),
-      })
+    // Send feedback in the same request — backend handles comment + status
+    const response = await api.patch(`/api/admin/tasks/${task.id}/reject`, {
+      feedback: feedback.trim(),
+    })
 
-      setRejectVisible(false)
-      setFeedback('')
-      onReviewed?.({ ...task, status: 'in_progress' })
-    } catch (err) {
-      setError(err.response?.data?.message || 'Unable to reject task.')
-    } finally {
-      setLoadingAction(null)
-    }
+    setRejectVisible(false)
+    setFeedback('')
+    onReviewed?.(response.data?.data || { ...task, status: 'in_progress' })
+  } catch (err) {
+    setError(err.response?.data?.message || 'Unable to reject task.')
+  } finally {
+    setLoadingAction(null)
   }
+}
 
   return (
     <>

@@ -1,11 +1,10 @@
 // src/features/employee/tasks/utils/taskHelpers.js
 
 export const STATUS_CONFIG = {
-  pending:     { label: 'Pending',     color: 'warning',  bg: '#fef3c7', text: '#92400e', border: '#f59e0b' },
-  todo:        { label: 'Pending',     color: 'warning',  bg: '#fef3c7', text: '#92400e', border: '#f59e0b' },
+  todo:        { label: 'To Do',       color: 'warning',  bg: '#fef3c7', text: '#92400e', border: '#f59e0b' },
   in_progress: { label: 'In Progress', color: 'primary',  bg: '#dbeafe', text: '#1e40af', border: '#3b82f6' },
   ready_for_review: { label: 'Ready for Review', color: 'info', bg: '#e0f2fe', text: '#075985', border: '#0ea5e9' },
-  done:        { label: 'Completed',   color: 'success',  bg: '#d1fae5', text: '#065f46', border: '#22c55e' },
+  done:        { label: 'Done',        color: 'success',  bg: '#d1fae5', text: '#065f46', border: '#22c55e' },
   on_hold:     { label: 'On Hold',     color: 'danger',   bg: '#fee2e2', text: '#991b1b', border: '#ef4444' },
 }
 

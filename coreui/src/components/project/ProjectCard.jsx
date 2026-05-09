@@ -14,7 +14,7 @@ const formatDate = (iso) => {
 
 const ProjectCard = ({ project, onDelete, onClick }) => {
   const isInProgress = project.status === 'in_progress'
-  const isCompleted = project.status === 'completed'
+  const isCompleted = project.status === 'done'
 
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: project.id,

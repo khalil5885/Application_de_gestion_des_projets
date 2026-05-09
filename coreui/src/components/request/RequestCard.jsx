@@ -1,5 +1,5 @@
-import React from 'react'
-import { CBadge, CButton, CCard, CCardBody, CCol, CRow, CSpinner } from '@coreui/react'
+import React, { useState } from 'react'
+import { CBadge, CButton, CCard, CCardBody, CCol, CCollapse, CRow, CSpinner } from '@coreui/react'
 
 const STATUS_COLORS = {
   pending: 'warning',
@@ -37,7 +37,16 @@ const getRelatedName = (request) =>
   request.related_name ||
   `${request.requestable_type || 'Item'} #${request.requestable_id || request.id}`
 
+const formatJson = (value) => {
+  try {
+    return JSON.stringify(value || {}, null, 2)
+  } catch {
+    return '{}'
+  }
+}
+
 const RequestCard = ({ request, onApprove, onReject, busyAction }) => {
+  const [showDetails, setShowDetails] = useState(false)
   const payload = readPayload(request)
   const status = request.status || 'pending'
   const isHandled = status !== 'pending'
@@ -58,6 +67,9 @@ const RequestCard = ({ request, onApprove, onReject, busyAction }) => {
               </CBadge>
             </div>
             <div className="small text-body-secondary">{getRelatedName(request)}</div>
+            <div className="small text-body-secondary">
+              Created {formatDate(request.created_at)}
+            </div>
           </div>
 
           <div className="d-flex align-items-start gap-2">
@@ -77,6 +89,9 @@ const RequestCard = ({ request, onApprove, onReject, busyAction }) => {
               onClick={() => onReject(request)}
             >
               {isRejecting ? <CSpinner size="sm" /> : 'Reject'}
+            </CButton>
+            <CButton color="light" size="sm" onClick={() => setShowDetails((value) => !value)}>
+              Details
             </CButton>
           </div>
         </div>
@@ -100,7 +115,23 @@ const RequestCard = ({ request, onApprove, onReject, busyAction }) => {
               {payload.reason || request.reason || 'No reason provided.'}
             </p>
           </CCol>
+          {(request.feedback || request.admin_feedback || payload.feedback) && (
+            <CCol xs={12}>
+              <div className="small text-body-secondary">Feedback</div>
+              <p className="mb-0 small" style={{ lineHeight: 1.6 }}>
+                {request.feedback || request.admin_feedback || payload.feedback}
+              </p>
+            </CCol>
+          )}
         </CRow>
+        <CCollapse visible={showDetails}>
+          <pre
+            className="small rounded-3 p-3 mt-3 mb-0 bg-body-tertiary"
+            style={{ whiteSpace: 'pre-wrap' }}
+          >
+            {formatJson(payload)}
+          </pre>
+        </CCollapse>
       </CCardBody>
     </CCard>
   )

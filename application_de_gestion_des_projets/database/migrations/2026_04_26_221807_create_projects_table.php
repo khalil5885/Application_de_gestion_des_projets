@@ -14,7 +14,7 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->foreignId('client_id')->constrained('users')->cascadeOnDelete();
             $table->foreignId('project_type_id')->nullable()->constrained()->nullOnDelete();
-            $table->enum('status', [ 'pending', 'in_progress', 'completed', 'on_hold'])->default('pending');
+            $table->enum('status', [ 'todo', 'in_progress', 'ready_for_review', 'done', 'on_hold'])->default('todo');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
             $table->unsignedTinyInteger('progress')->default(0);

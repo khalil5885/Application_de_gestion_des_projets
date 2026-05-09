@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CBadge, CSpinner, CAlert } from '@coreui/react'
+import { CBadge, CSpinner, CAlert, CCard, CCardBody, CCol, CProgress, CRow } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
   cilArrowLeft, cilCalendar, cilUser, cilBriefcase,
@@ -10,6 +10,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../api'
 import AiEstimationCard from '../../../components/project/AiEstimationCard'
+import ActivityFeed from '../../../components/dashboard/ActivityFeed'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -36,16 +37,18 @@ const formatDate = (dateString) => {
 }
 
 const STATUS_COLORS = {
-  pending: 'warning',
+  todo: 'warning',
   in_progress: 'primary',
-  completed: 'success',
+  ready_for_review: 'info',
+  done: 'success',
   on_hold: 'danger',
 }
 
 const STATUS_LABELS = {
-  pending: 'Pending',
+  todo: 'To Do',
   in_progress: 'In Progress',
-  completed: 'Completed',
+  ready_for_review: 'Ready for Review',
+  done: 'Done',
   on_hold: 'On Hold',
 }
 
@@ -247,7 +250,11 @@ const ProjectDetail = () => {
     }
   }
   
-  useEffect(() => { fetchData() }, [id])
+  useEffect(() => {
+    const timer = window.setTimeout(fetchData, 0)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
 
   const { assignedColumns, unassignedColumn } = useMemo(() => {
     if (!project) return {
@@ -341,6 +348,15 @@ const ProjectDetail = () => {
   if (error) return <CAlert color="danger">{error}</CAlert>
   if (!project) return null
 
+  const completedTasks = tasks.filter(task => task.status === 'done').length
+  const readyTasks = tasks.filter(task => task.status === 'ready_for_review').length
+  const overdueTasks = tasks.filter(task => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done').length
+  const progress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0
+  const members = project.employees || project.members || []
+  const comments = project.comments || []
+  const files = project.files || project.documents || project.attachments || []
+  const activity = project.recent_activity || project.activity || comments
+
   return (
     <div className="project-detail-wrapper">
 
@@ -385,6 +401,89 @@ const ProjectDetail = () => {
       </div>
 
       <AiEstimationCard project={project} onRecalculated={handleEstimationRecalculated} />
+
+      <CRow className="g-4 mb-5">
+        <CCol md={6} xl={3}>
+          <CCard className="border-0 shadow-sm h-100">
+            <CCardBody>
+              <div className="small text-body-secondary mb-1">Progress</div>
+              <div className="fs-3 fw-bold mb-2">{progress}%</div>
+              <CProgress value={progress} color={progress >= 80 ? 'success' : 'primary'} />
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={6} xl={3}>
+          <CCard className="border-0 shadow-sm h-100">
+            <CCardBody>
+              <div className="small text-body-secondary mb-1">Ready for Review</div>
+              <div className="fs-3 fw-bold text-info">{readyTasks}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={6} xl={3}>
+          <CCard className="border-0 shadow-sm h-100">
+            <CCardBody>
+              <div className="small text-body-secondary mb-1">Overdue Tasks</div>
+              <div className="fs-3 fw-bold text-danger">{overdueTasks}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol md={6} xl={3}>
+          <CCard className="border-0 shadow-sm h-100">
+            <CCardBody>
+              <div className="small text-body-secondary mb-1">Files</div>
+              <div className="fs-3 fw-bold text-success">{files.length}</div>
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
+
+      <CRow className="g-4 mb-5">
+        <CCol lg={4}>
+          <CCard className="border-0 shadow-sm h-100">
+            <CCardBody>
+              <h6 className="fw-bold mb-3">Members</h6>
+              {members.length === 0 ? (
+                <div className="text-body-secondary small">No members assigned.</div>
+              ) : (
+                <div className="d-flex flex-column gap-2">
+                  {members.slice(0, 6).map(member => {
+                    const name = member.employee?.name || member.user?.name || member.name || 'Member'
+                    return (
+                      <div key={member.id || name} className="d-flex justify-content-between align-items-center rounded-3 p-2 bg-body-tertiary">
+                        <span className="fw-semibold small">{name}</span>
+                        <CBadge color="secondary">{member.role || member.employee?.global_role || 'member'}</CBadge>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </CCardBody>
+          </CCard>
+        </CCol>
+        <CCol lg={4}>
+          <ActivityFeed title="Recent Activity" items={activity} emptyText="No activity yet." />
+        </CCol>
+        <CCol lg={4}>
+          <CCard className="border-0 shadow-sm h-100">
+            <CCardBody>
+              <h6 className="fw-bold mb-3">Comments</h6>
+              {comments.length === 0 ? (
+                <div className="text-body-secondary small">No comments yet.</div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  {comments.slice(0, 4).map(comment => (
+                    <div key={comment.id} className="rounded-3 p-3 bg-body-tertiary">
+                      <div className="fw-semibold small">{comment.user?.name || 'Team'}</div>
+                      <div className="small">{comment.content || comment.message}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CCardBody>
+          </CCard>
+        </CCol>
+      </CRow>
 
       {/* Controls */}
       <div className="d-flex justify-content-end align-items-center mb-4 gap-3">

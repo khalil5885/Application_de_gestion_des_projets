@@ -140,89 +140,79 @@ Component-level state uses React Hooks (useState, useReducer).
 ## Directory Structure
 
 ```
-coreui-free-react-admin-template/
+coreui/
 │
 ├── public/                      # Static assets (served as-is)
 │   ├── favicon.ico
 │   └── robots.txt
 │
 ├── src/                         # Source code
-│   │
-│   ├── assets/                  # Application assets
-│   │   ├── brand/              # Logo components (logo.js, sygnet.js)
-│   │   └── images/             # Image files (avatars, etc.)
-│   │
-│   ├── components/              # Reusable UI components
-│   │   ├── AppBreadcrumb.js    # Breadcrumb navigation
-│   │   ├── AppContent.js       # Main content area wrapper
-│   │   ├── AppFooter.js        # Footer component
-│   │   ├── AppHeader.js        # Header component
-│   │   ├── AppSidebar.js       # Sidebar navigation
-│   │   ├── AppSidebarNav.js    # Sidebar navigation renderer
-│   │   ├── DocsComponents.js   # Documentation component showcase
-│   │   ├── DocsExample.js      # Code example wrapper
-│   │   ├── DocsIcons.js        # Icon showcase
-│   │   ├── DocsLink.js         # Documentation link
-│   │   ├── header/             # Header sub-components
-│   │   │   └── AppHeaderDropdown.js  # User dropdown menu
-│   │   └── index.js            # Component barrel export
-│   │
-│   ├── layout/                  # Layout wrapper components
-│   │   └── DefaultLayout.js    # Main application layout
-│   │
-│   ├── views/                   # Page/view components
-│   │   ├── dashboard/          # Dashboard page
-│   │   │   └── Dashboard.js
-│   │   ├── base/               # Base UI component examples
-│   │   │   ├── accordion/
-│   │   │   ├── breadcrumbs/
-│   │   │   ├── cards/
-│   │   │   ├── carousels/
-│   │   │   ├── collapses/
-│   │   │   ├── list-groups/
-│   │   │   ├── navs/
-│   │   │   ├── paginations/
-│   │   │   ├── placeholders/
-│   │   │   ├── popovers/
-│   │   │   ├── progress/
-│   │   │   ├── spinners/
-│   │   │   ├── tables/
-│   │   │   ├── tabs/
-│   │   │   └── tooltips/
-│   │   ├── buttons/            # Button examples
-│   │   ├── charts/             # Chart examples
-│   │   ├── forms/              # Form examples
-│   │   ├── icons/              # Icon examples
-│   │   ├── notifications/      # Notification examples
-│   │   ├── widgets/            # Widget examples
-│   │   └── pages/              # Special pages
-│   │       ├── login/          # Login page
-│   │       ├── register/       # Registration page
-│   │       ├── page404/        # 404 error page
-│   │       └── page500/        # 500 error page
-│   │
-│   ├── scss/                    # Global stylesheets
-│   │   ├── style.scss          # Main stylesheet (imports CoreUI)
-│   │   ├── _custom.scss        # Custom style overrides
-│   │   ├── examples.scss       # Documentation example styles
-│   │   └── vendors/            # Third-party style overrides
-│   │
+│   ├── api.js                   # API helper and HTTP client setup
 │   ├── App.js                   # Root application component
 │   ├── index.js                 # Application entry point
 │   ├── routes.js                # Route definitions
+│   ├── store.js                 # Redux store configuration
 │   ├── _nav.js                  # Sidebar navigation configuration
-│   └── store.js                 # Redux store configuration
+│   ├── _nav/                    # Role-specific navigation helpers
+│   │   ├── _nav_admin.js
+│   │   ├── _nav_client.js
+│   │   ├── _nav_employee.js
+│   │   └── getNav.js
+│   ├── assets/                  # Application assets
+│   ├── components/              # Reusable UI components
+│   │   ├── AppBreadcrumb.jsx
+│   │   ├── AppContent.jsx
+│   │   ├── AppFooter.jsx
+│   │   ├── AppHeader.jsx
+│   │   ├── AppSidebar.jsx
+│   │   ├── AppSidebarNav.jsx
+│   │   ├── ProtectedRoute.jsx
+│   │   ├── RoleGuard.jsx
+│   │   ├── project/             # Project-related UI components
+│   │   ├── request/             # Request workflow components
+│   │   ├── task/                # Task-related components
+│   │   ├── user/                # User management components
+│   │   ├── workload/            # Workload dashboard components
+│   │   └── header/              # Header sub-components
+│   │       └── AppHeaderDropdown.jsx
+│   ├── context/                 # React context providers and hooks
+│   ├── layout/                  # Layout wrapper components
+│   │   └── DefaultLayout.jsx    # Main application layout
+│   ├── scss/                    # Global stylesheets
+│   │   ├── style.scss           # Main stylesheet (imports CoreUI)
+│   │   ├── _custom.scss         # Custom style overrides
+│   │   ├── examples.scss        # Example styles
+│   │   └── vendors/             # Third-party style overrides
+│   └── views/                   # Page/view components
+│       ├── admin/
+│       ├── base/
+│       ├── buttons/
+│       ├── charts/
+│       ├── client/
+│       ├── dashboard/
+│       ├── employee/
+│       ├── forms/
+│       ├── icons/
+│       ├── notifications/
+│       ├── pages/
+│       ├── settings/
+│       ├── theme/
+│       ├── widgets/
+│       └── workspace/
 │
-├── build/                       # Build utilities (optional)
+├── build/                       # Optional local build artifacts
 ├── node_modules/                # Dependencies
-├── index.html                   # HTML entry point
+├── ARCHITECTURE.md              # Architecture documentation
+├── DEVELOPMENT.md               # Development notes
+├── README.md                    # Project documentation
+├── package.json                 # Project metadata and dependencies
+├── package-lock.json            # Exact dependency tree
 ├── vite.config.mjs              # Vite build configuration
 ├── eslint.config.mjs            # ESLint configuration
-├── package.json                 # Project metadata and dependencies
-├── .prettierrc.js               # Prettier configuration
 ├── .browserslistrc              # Browser compatibility targets
 ├── .editorconfig                # Editor configuration
-└── README.md                    # Project documentation
+├── .gitignore                   # Git ignore rules
+└── index.html                   # HTML entry point
 ```
 
 ## Core Components

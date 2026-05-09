@@ -148,9 +148,9 @@ class TaskController extends Controller
         return $this->handle(function () use ($task) {
             $actor = request()->user();
 
-            abort_unless(in_array($task->status, ['ready_for_review', 'review'], true), 422, 'Task is not ready for review.');
+            abort_unless($task->status === 'ready_for_review', 422, 'Task is not ready for review.');
 
-            $task->update(['status' => 'completed']);
+            $task->update(['status' => 'done']);
 
             ActivityLog::record($actor, 'task_approved', $task, 'Task approved and completed.');
             $this->notifyAssignee($task, 'task_approved', 'Task approved.');
@@ -165,7 +165,7 @@ class TaskController extends Controller
     public function rejectTask(RejectTaskReviewRequest $request, Task $task)
     {
         return $this->handle(function () use ($request, $task) {
-            abort_unless(in_array($task->status, ['ready_for_review', 'review'], true), 422, 'Task is not ready for review.');
+            abort_unless($task->status === 'ready_for_review', 422, 'Task is not ready for review.');
 
             $task->update(['status' => 'in_progress']);
 

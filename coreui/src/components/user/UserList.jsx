@@ -17,7 +17,7 @@ import {
   CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilPeople, cilSearch, cilTrash, cilWarning, cilUser, cilShieldAlt, cilBriefcase } from '@coreui/icons'
+import { cilPeople, cilSearch, cilTrash, cilWarning, cilUser, cilShieldAlt, cilBriefcase, cilInfo } from '@coreui/icons'
 import { motion, AnimatePresence } from 'motion/react'
 import api from '../../api'
 
@@ -75,7 +75,7 @@ const Avatar = ({ name, role }) => {
 
 // ─── User Row ─────────────────────────────────────────────────────────────────
 
-const UserRow = ({ user, idx, onDelete }) => {
+const UserRow = ({ user, idx, onDelete, onView }) => {
   const cfg = ROLE_CONFIG[user.global_role] || { color: 'secondary', label: user.global_role, dot: '#8a93a2' }
 
   return (
@@ -131,6 +131,18 @@ const UserRow = ({ user, idx, onDelete }) => {
       </div>
 
       {/* Delete */}
+      <CButton
+        size="sm"
+        color="primary"
+        variant="ghost"
+        className="p-1"
+        style={{ flexShrink: 0 }}
+        onClick={() => onView(user)}
+        title="View profile"
+      >
+        <CIcon icon={cilInfo} size="sm" />
+      </CButton>
+
       {user.global_role !== 'admin' ? (
         <CButton
           size="sm"
@@ -160,7 +172,10 @@ const UserList = ({ refreshKey }) => {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [profileTarget, setProfileTarget] = useState(null)
   const [deleting, setDeleting] = useState(false)
+  const [page, setPage] = useState(1)
+  const pageSize = 8
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -177,7 +192,10 @@ const UserList = ({ refreshKey }) => {
     }
   }, [])
 
-  useEffect(() => { fetchUsers() }, [fetchUsers, refreshKey])
+  useEffect(() => {
+    const timer = window.setTimeout(fetchUsers, 0)
+    return () => window.clearTimeout(timer)
+  }, [fetchUsers, refreshKey])
 
   const handleDeleteConfirm = async () => {
     if (!deleteTarget) return
@@ -198,6 +216,8 @@ const UserList = ({ refreshKey }) => {
     const matchRole = roleFilter === 'all' || u.global_role === roleFilter
     return matchSearch && matchRole
   })
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
+  const visibleUsers = filtered.slice((page - 1) * pageSize, page * pageSize)
 
   // Counts per role for filter buttons
   const counts = users.reduce((acc, u) => {
@@ -308,7 +328,7 @@ const UserList = ({ refreshKey }) => {
               <div style={{ flex: 1 }}>Name / Email</div>
               <div style={{ width: 72, textAlign: 'center' }}>Role</div>
               <div style={{ width: 80, textAlign: 'right' }}>Joined</div>
-              <div style={{ width: 30 }} />
+              <div style={{ width: 66 }} />
             </div>
           )}
 
@@ -326,15 +346,32 @@ const UserList = ({ refreshKey }) => {
             </div>
           ) : (
             <AnimatePresence mode="popLayout">
-              {filtered.map((user, idx) => (
+              {visibleUsers.map((user, idx) => (
                 <UserRow
                   key={user.id}
                   user={user}
                   idx={idx}
                   onDelete={setDeleteTarget}
+                  onView={setProfileTarget}
                 />
               ))}
             </AnimatePresence>
+          )}
+
+          {!loading && filtered.length > pageSize && (
+            <div className="d-flex justify-content-between align-items-center mt-3">
+              <span className="small text-body-secondary">
+                Page {page} of {totalPages}
+              </span>
+              <div className="d-flex gap-2">
+                <CButton size="sm" color="light" disabled={page === 1} onClick={() => setPage(p => Math.max(1, p - 1))}>
+                  Previous
+                </CButton>
+                <CButton size="sm" color="light" disabled={page === totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}>
+                  Next
+                </CButton>
+              </div>
+            </div>
           )}
 
         </CCardBody>
@@ -356,6 +393,46 @@ const UserList = ({ refreshKey }) => {
           </CButton>
           <CButton color="danger" onClick={handleDeleteConfirm} disabled={deleting}>
             {deleting ? <CSpinner size="sm" /> : 'Delete'}
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      <CModal visible={!!profileTarget} onClose={() => setProfileTarget(null)} alignment="center">
+        <CModalHeader>
+          <CModalTitle>User Profile</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {profileTarget && (
+            <div className="d-flex flex-column gap-3">
+              <div className="d-flex align-items-center gap-3">
+                <Avatar name={profileTarget.name} role={profileTarget.global_role} />
+                <div>
+                  <div className="fw-bold">{profileTarget.name}</div>
+                  <div className="text-body-secondary small">{profileTarget.email}</div>
+                </div>
+              </div>
+              <div className="d-flex justify-content-between rounded-3 p-3 bg-body-tertiary">
+                <span className="text-body-secondary small">Role</span>
+                <CBadge color={ROLE_CONFIG[profileTarget.global_role]?.color || 'secondary'}>
+                  {profileTarget.global_role}
+                </CBadge>
+              </div>
+              <div className="d-flex justify-content-between rounded-3 p-3 bg-body-tertiary">
+                <span className="text-body-secondary small">Joined</span>
+                <span className="fw-semibold small">{formatDate(profileTarget.created_at)}</span>
+              </div>
+              <div className="d-flex justify-content-between rounded-3 p-3 bg-body-tertiary">
+                <span className="text-body-secondary small">Status</span>
+                <CBadge color={profileTarget.email_verified_at ? 'success' : 'warning'}>
+                  {profileTarget.email_verified_at ? 'verified' : 'pending'}
+                </CBadge>
+              </div>
+            </div>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="primary" onClick={() => setProfileTarget(null)}>
+            Close
           </CButton>
         </CModalFooter>
       </CModal>

@@ -19,7 +19,7 @@ class StoreProjectRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'client_id' => ['required', 'exists:users,id'],
             'project_type_id' => ['nullable', 'exists:project_types,id'],
-            'status' => ['sometimes', Rule::in(['pending', 'in_progress', 'ready_for_review', 'completed', 'on_hold'])],
+            'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'ready_for_review', 'completed', 'on_hold'])],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
             'progress' => ['sometimes', 'integer', 'min:0', 'max:100'],

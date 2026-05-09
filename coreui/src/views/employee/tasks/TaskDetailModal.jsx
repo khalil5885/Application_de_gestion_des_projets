@@ -74,9 +74,9 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onTaskUpdated
   const TASK_STATUSES = [
     { value: 'todo', label: 'To Do' },
     { value: 'in_progress', label: 'In Progress' },
-    { value: 'review', label: 'Review' },
-    { value: 'blocked', label: 'Blocked' },
-    { value: 'done', label: 'Done' }
+    { value: 'ready_for_review', label: 'Ready for Review' },
+    { value: 'done', label: 'Done' },
+    { value: 'on_hold', label: 'On Hold' }
   ]
 
   return (

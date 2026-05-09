@@ -1,377 +1,342 @@
 # CoreUI Project Management Frontend
 
-A modern React 19 admin dashboard for project management with multi-role support (admin, employee, client). Built with Vite, Redux, and React Context API.
+React 19 + Vite frontend for the project management platform. The app uses CoreUI for the admin-dashboard interface, Axios for API access, React Context for authentication, Redux for global UI preferences, and role-aware navigation for admin, employee, and client workspaces.
 
-## Table of Contents
+## Current Status
 
-- [Tech Stack](#tech-stack)
-- [Folder Structure](#folder-structure)
-- [Key Design Patterns](#key-design-patterns)
-- [State Management Approach](#state-management-approach)
-- [Getting Started](#getting-started)
-- [Backend Integration](#backend-integration)
-- [Available Scripts](#available-scripts)
+- Frontend folder: `coreui/`
+- Main entry: `src/index.js`
+- App shell: `src/App.js`
+- Authenticated layout: `src/layout/DefaultLayout.js`
+- Routes: `src/routes.js`
+- API client: `src/api.js`
+- Auth provider: `src/context/AuthContext.jsx`
+- Latest scanned build log: `build_vite.txt` shows a successful Vite production build.
+- `build_output.txt` is an older Create React App style output and is no longer the source of truth for this Vite app.
 
 ## Tech Stack
 
-### Framework & Build
-- **React** 19.2.3 — Latest React with hooks and modern features
-- **Vite** 7.3.0 — Lightning-fast build tool with dev server on port 3000
-- **JavaScript/JSX** — Main language with SCSS for styling
-- **React Router DOM** 7.11.0 — Client-side routing with lazy-loaded code splitting
-- **Axios** 1.7.9 — HTTP client with built-in auth interceptors
+### Framework and Build
 
-### State Management
-- **Redux** (via @reduxjs/toolkit) — Global UI state (sidebar visibility, theme preference)
-- **React Context API** — Authentication state and user data
-- **Local Storage** — Token persistence and auth recovery
+- React `19.2.3`
+- Vite `7.3.x`
+- JavaScript and JSX
+- React Router DOM `7.11.0`
+- Axios `1.13.6`
 
-### UI & Components
-- **@coreui/react** 5.9.2 — Professional admin template components (sidebar, forms, cards, modals)
-- **@coreui/icons-react** 2.3.0 — Icon library with 600+ icons
-- **lucide-react** 1.8.0 — Additional icon library
-- **Chart.js** 4.4.0 + **@coreui/react-chartjs** — Data visualization for dashboards
-- **framer-motion** 11.3.28 — Smooth animations and transitions
-- **@dnd-kit** — Modern drag-and-drop library for sortable lists
+### UI and Experience
 
-### Code Quality & Styling
-- **ESLint** 9.39.2 — Code linting for consistency
-- **Prettier** 3.7.4 — Code formatting
-- **SCSS** — Preprocessor for styling with autoprefixer support
+- `@coreui/react` for cards, forms, modals, layout, badges, sidebars, and tables
+- `@coreui/icons-react` and `@coreui/icons`
+- `lucide-react`
+- Chart.js with `@coreui/react-chartjs`
+- Framer Motion and Motion
+- `@dnd-kit` for drag-and-drop task workflows
 
-### Development
-- **@vitejs/plugin-react** — Fast React refresh during development
-- **@vitejs/plugin-basic-ssl** — Local HTTPS support if needed
+### State and Styling
 
-## Folder Structure
+- React Context for authentication and user session state
+- Redux for global UI state such as sidebar/theme preferences
+- Local storage for token and user persistence
+- SCSS via `src/scss/style.scss`
+- ESLint and Prettier configuration files are present
 
-```
-coreui/src/
-├── api.js                    # Axios HTTP client with auth interceptors & error handling
-├── store.js                  # Redux store for UI state (sidebar, theme)
-├── routes.js                 # Route configuration with lazy loading for code splitting
-├── App.js                    # Root component that sets up routing, Redux, and layouts
-├── index.js                  # Application entry point
-│
-├── context/
-│   └── AuthContext.jsx       # Auth provider for login, logout, and user session
-│
-├── components/               # Reusable UI components
-│   ├── ProtectedRoute.jsx    # Route wrapper that guards protected pages (requires auth)
-│   ├── RoleGuard.jsx         # Role-based access control wrapper (admin/employee/client)
-│   ├── App*.jsx              # Layout components (AppSidebar, AppHeader, AppFooter, AppBreadcrumb)
-│   ├── header/
-│   │   └── AppHeaderDropdown.jsx  # User menu dropdown in header
-│   ├── project/              # Project-specific reusable components
-│   │   ├── ProjectForm.jsx
-│   │   ├── ProjectCard.jsx
-│   │   ├── ProjectModal.jsx
-│   │   └── TaskList.jsx
-│   ├── dashboard/            # Dashboard visualization components
-│   │   ├── RiskMatrix.jsx
-│   │   ├── ProjectChart.jsx
-│   │   └── StatsCard.jsx
-│   └── user/                 # User management components
-│       ├── UserForm.jsx
-│       └── UserTable.jsx
-│
-├── layout/
-│   └── DefaultLayout.js      # Main app layout wrapper (sidebar + header + footer + page content)
-│
-├── views/                    # Page-level components (one per route)
-│   ├── pages/
-│   │   ├── Login.jsx         # Authentication page
-│   │   ├── SetupPassword.jsx # Initial password setup flow
-│   │   ├── NotFound.jsx      # 404 error page
-│   │   └── ServerError.jsx   # 500 error page
-│   │
-│   ├── admin/                # Admin-only pages
-│   │   ├── Dashboard.jsx     # Main admin dashboard with stats and charts
-│   │   ├── UserManagement.jsx # User CRUD interface
-│   │   └── project/
-│   │       ├── ProjectList.jsx    # View all projects
-│   │       ├── ProjectDetail.jsx  # Edit project, manage members
-│   │       └── TaskManagement.jsx # Manage project tasks
-│   │
-│   ├── employee/             # Employee-only pages
-│   │   ├── Dashboard.jsx     # Employee task dashboard
-│   │   ├── AssignedTasks.jsx # List of assigned tasks
-│   │   └── TaskDetail.jsx    # View/update task status
-│   │
-│   ├── dashboard/
-│   │   ├── RiskMatrix.jsx    # Risk assessment visualization
-│   │   └── ActivityLog.jsx   # Recent activities
-│   │
-│   ├── workspace/
-│   │   ├── Calendar.jsx      # Project timeline calendar
-│   │   └── ActivityLog.jsx   # System activity log
-│   │
-│   └── settings/
-│       └── UserSettings.jsx  # Profile and preference settings
-│
-├── assets/
-│   ├── brand/
-│   │   └── logo.svg          # Application logo
-│   └── images/               # Static images
-│
-└── scss/
-    ├── _variables.scss       # Color and spacing variables
-    ├── _components.scss      # Component-specific styling
-    ├── _utilities.scss       # Utility classes
-    └── style.scss            # Main stylesheet
-```
+## Project Structure
 
-## Key Design Patterns
-
-### 1. Component Architecture (Atomic-like Pattern)
-
-Components are organized by abstraction level:
-- **Leaf Components** — Simple, reusable UI elements (buttons, cards, inputs)
-- **Feature Components** — Domain-specific (ProjectForm, TaskList, UserTable)
-- **Page Components** — Full-page views that fetch data and compose feature components
-- **Layout Components** — Wrapper layouts that define page structure
-
-This separation ensures components are testable, reusable, and maintainable.
-
-### 2. Code Splitting & Lazy Loading
-
-Routes are lazy-loaded using React.lazy() and Suspense:
-
-```javascript
-// routes.js example pattern
-const Dashboard = lazy(() => import('./views/admin/Dashboard'))
-const ProjectList = lazy(() => import('./views/admin/project/ProjectList'))
+```text
+coreui/
++-- .github/                         # Project community docs
++-- public/                          # Public static assets
++-- src/
+|   +-- _nav/
+|   |   +-- _nav_admin.js            # Admin sidebar navigation
+|   |   +-- _nav_client.js           # Client sidebar navigation
+|   |   +-- _nav_employee.js         # Employee sidebar navigation
+|   |   +-- getNav.js                # Role-based nav selector
+|   +-- assets/
+|   |   +-- brand/                   # Logo and brand modules
+|   |   +-- images/                  # Static image assets
+|   +-- components/
+|   |   +-- AppBreadcrumb.js
+|   |   +-- AppContent.jsx
+|   |   +-- AppFooter.jsx
+|   |   +-- AppHeader.jsx
+|   |   +-- AppSidebar.jsx
+|   |   +-- AppSidebarNav.jsx
+|   |   +-- ProtectedRoute.jsx       # Auth guard wrapper
+|   |   +-- RoleGuard.jsx            # Role visibility helper
+|   |   +-- dashboard/               # Shared dashboard widgets
+|   |   +-- header/                  # Header dropdown components
+|   |   +-- project/
+|   |   |   +-- AiEstimationCard.jsx
+|   |   |   +-- CreateProjectModal.jsx
+|   |   |   +-- CreateProjectTypeModal.jsx
+|   |   |   +-- ProgressBar.jsx
+|   |   |   +-- ProjectCard.jsx
+|   |   |   +-- ProjectDrawer.jsx
+|   |   |   +-- TaskBreakdown.jsx
+|   |   +-- request/
+|   |   |   +-- RequestCard.jsx
+|   |   |   +-- RequestExtensionForm.jsx
+|   |   +-- task/
+|   |   |   +-- TaskReviewActions.jsx
+|   |   +-- user/
+|   |       +-- CreateUser.jsx
+|   |       +-- UserList.jsx
+|   +-- context/
+|   |   +-- AuthContext.jsx
+|   +-- layout/
+|   |   +-- DefaultLayout.js
+|   +-- scss/
+|   |   +-- examples.scss
+|   |   +-- style.scss
+|   |   +-- vendors/simplebar.scss
+|   +-- views/
+|   |   +-- admin/
+|   |   |   +-- RequestManagement.jsx
+|   |   |   +-- UserManagement.jsx
+|   |   |   +-- project/
+|   |   |       +-- ProjectDetail.jsx
+|   |   |       +-- ProjectManagement.jsx
+|   |   |       +-- ProjectTypeManagement.jsx
+|   |   |       +-- ProjectTypesPage.jsx
+|   |   |       +-- TaskManagement.jsx
+|   |   |       +-- TaskTemplatesPage.jsx
+|   |   +-- dashboard/
+|   |   |   +-- Dashboard.jsx
+|   |   |   +-- components/          # Admin, employee, and client dashboard panels
+|   |   +-- employee/
+|   |   |   +-- tasks/               # Employee task board, filters, modal, hooks, API helpers
+|   |   +-- pages/
+|   |   |   +-- login/
+|   |   |   +-- page404/
+|   |   |   +-- page500/
+|   |   |   +-- register/
+|   |   |   +-- setup-password/
+|   |   +-- settings/
+|   |   |   +-- Settings.jsx
+|   |   +-- workspace/
+|   |       +-- activity/Activity.jsx
+|   |       +-- calendar/Calendar.jsx
+|   +-- api.js
+|   +-- App.js
+|   +-- index.js
+|   +-- routes.js
+|   +-- store.js
++-- build_output.txt                 # Legacy/stale build output
++-- build_vite.txt                   # Vite build output
++-- DEVELOPMENT.md
++-- ARCHITECTURE.md
++-- package.json
++-- vite.config.mjs
++-- README.md
 ```
 
-This dramatically reduces initial bundle size. Each route is code-split into its own chunk and loaded on-demand.
+## Routes
 
-### 3. Centralized API Client
+Routes are lazy-loaded in `src/routes.js`.
 
-All HTTP requests go through a single Axios instance in [api.js](src/api.js):
-- **Request interceptors** — Automatically inject Bearer token from localStorage
-- **Response interceptors** — Handle 401 auth errors by logging out the user
-- **Error normalization** — All errors follow a consistent format
+| Path | View | Actor |
+| --- | --- | --- |
+| `/login` | Login | Public |
+| `/setup-password` | Setup password | Public |
+| `/dashboard` | Role-aware dashboard | Admin, employee, client |
+| `/admin/users` | User management | Admin |
+| `/admin/requests` | Request management | Admin |
+| `/workspace/ai-estimation` | AI estimation component route | Admin/workspace |
+| `/admin/projects` | Project management | Admin |
+| `/admin/projects/:id` | Project detail, team, tasks, AI estimation | Admin |
+| `/admin/projects/:id/tasks` | Task kanban and review management | Admin |
+| `/admin/project-types` | Project type management | Admin |
+| `/admin/task-templates` | Task template management | Admin |
+| `/employee/tasks` | Employee task dashboard | Employee |
+| `/workspace/calendar` | Calendar | Shared workspace |
+| `/workspace/activity` | Activity log | Shared workspace |
+| `/settings` | Settings | Authenticated users |
 
-This pattern eliminates token management boilerplate and ensures consistent error handling across the app.
+## Actor Features
 
-### 4. Authentication & Authorization Pattern
+### Admin
 
-**AuthContext** provides:
-- Login/logout functionality
-- User state (email, role, permissions)
-- Auto-recovery of session from localStorage
+Admin users have the broadest management surface:
 
-**ProtectedRoute** — Wraps routes that require authentication
-**RoleGuard** — Wraps routes that require specific roles (admin, employee, client)
+- Dashboard stats for active projects, completed tasks, pending tasks, and team members
+- Recent activity and upcoming deadline overview
+- Project CRUD workflow through `ProjectManagement`
+- Project detail view with team assignment, task distribution, and an AI estimation card
+- Project type and task template management
+- Task kanban board with drag-and-drop status updates
+- Ready-for-review task workflow with approve and reject actions
+- Reject task flow with feedback comment submission
+- Employee deadline extension request review
+- Request approve/reject actions with handled-state button disabling
+- User management for admins, employees, and clients
+- Calendar and activity-log access
 
-Example route protection:
-```javascript
-<Route element={<ProtectedRoute><RoleGuard roles={['admin']}><UserManagement /></RoleGuard></ProtectedRoute>} path="/admin/users" />
-```
+### Employee
 
-### 5. Form Handling
+Employee users focus on assigned work:
 
-Forms use controlled React components with local `useState` for validation and state:
-- Input changes update component state
-- Submit handlers send data to backend via API client
-- Error messages displayed inline or in toast notifications
-- No external form library dependency (lightweight and flexible)
+- Role-aware dashboard with task totals, completed count, in-progress count, and to-do count
+- Project progress summary through dashboard widgets
+- Upcoming tasks panel
+- My Tasks page with list mode, filters, priorities, due dates, subtasks, comments, and task details modal
+- Task status updates using the employee task API helper
+- Task detail modal with description, subtasks, progress, comments, and status badge
+- Mark task as ready for review
+- Submit deadline extension requests with requested deadline and reason
+- Calendar access and account settings
 
-### 6. Routing Strategy
+### Client
 
-Uses React Router v7 with:
-- **Route-based code splitting** — Each page is its own chunk
-- **Nested routes** — `/admin/*` routes are grouped under admin layout
-- **Protected routes** — Auth checks before rendering
-- **Fallback UI** — Loading spinner shown while chunks load
-- **404 handling** — Catch-all route at end of route list
+Client users see project-facing progress:
 
-## State Management Approach
+- Role-aware dashboard with total projects, active projects, completed projects, and average progress
+- Client project list component for project progress visibility
+- Sidebar entries for all projects, progress, comments, documents, calendar, and settings
+- Shared calendar access
+- Account settings
 
-### Why Hybrid Architecture?
+Some client sidebar destinations are present in navigation before dedicated route entries are defined. Add route entries in `src/routes.js` when those pages are implemented.
 
-The app uses **three complementary state management tools** instead of one:
+## Core Workflows
 
-| State Type | Tool | Reason |
-|-----------|------|--------|
-| **UI State** (sidebar, theme) | Redux | Needs to persist and be accessed by many components |
-| **Auth State** (user, token, roles) | React Context | Simpler than Redux; used only by auth-protected routes |
-| **Component State** (forms, dropdowns) | useState | Local component state for UI that doesn't need to be global |
-| **Persistence** | localStorage | Recover auth session on page refresh |
+### Authentication
 
-### Redux for UI State
+`AuthContext.jsx` owns login, logout, local-storage recovery, and authenticated user state. The Axios client reads the stored token and attaches it to requests.
 
-Store at [store.js](src/store.js):
-- `sidebar.collapsed` — Toggle sidebar visibility
-- `theme.dark` — Dark/light theme preference
+Local storage keys currently used:
 
-Minimal and focused. Most logic lives in components using hooks.
+- `token`
+- `user`
 
-### Context API for Authentication
+### API Access
 
-[AuthContext.jsx](src/context/AuthContext.jsx) provides:
-- `user` — Current user object (email, role, permissions)
-- `token` — Bearer token for API calls
-- `login(email, password)` — Authenticate
-- `logout()` — Clear session and redirect
-- `isLoading` — Loading state during auth operations
+All HTTP calls should use `src/api.js`.
 
-Usage in components:
-```javascript
-const { user, isLoading, login } = useContext(AuthContext)
-if (user?.role === 'admin') { /* show admin features */ }
-```
+The Axios instance:
 
-### localStorage for Persistence
+- Sets `Content-Type: application/json`
+- Sets `Accept: application/json`
+- Adds `Authorization: Bearer <token>` when a token exists
+- Handles `401` responses by clearing auth storage and redirecting to `/login`
 
-On app startup, AuthContext checks localStorage for:
-- `auth_token` — Restore previous session
-- `user_data` — Restore user info without re-fetching
+### Role-Based UI
 
-If token exists and is still valid, user is automatically logged in.
+Navigation is selected through `src/_nav/getNav.js`.
 
-### When to Use Each
+Dashboard content is selected in `src/views/dashboard/Dashboard.jsx` using the active user's `global_role` or `role`.
 
-| Scenario | Use | Reason |
-|----------|-----|--------|
-| Toggle sidebar on/off | Redux | Needs to survive navigation; accessed by layout |
-| User logged in? | Context | Only needed by protected route wrappers |
-| Form input values | useState | Only the form component needs this data |
-| Save user preferences | localStorage | Should persist across sessions |
+### Request System
 
-## Getting Started
+Employee request creation:
 
-### Installation
+- Component: `src/components/request/RequestExtensionForm.jsx`
+- Payload type: `extension`
+- Includes `requestable_id`, `requestable_type`, `current_deadline`, `requested_deadline`, and `reason`
 
-```bash
-npm install
-```
+Admin request review:
 
-or
+- Page: `src/views/admin/RequestManagement.jsx`
+- Card: `src/components/request/RequestCard.jsx`
+- Supports approve and reject actions
 
-```bash
-yarn install
-```
+### Task Review System
 
-### Development Server
+Employee side:
 
-```bash
-npm run dev
-```
+- `TaskDetailModal.jsx` exposes "Mark as Ready for Review"
+- Status badge supports `pending`, `todo`, `in_progress`, `ready_for_review`, `done`, and `on_hold`
 
-The app runs on [http://localhost:3000](http://localhost:3000) with hot reload enabled.
+Admin side:
 
-### Build for Production
+- `TaskManagement.jsx` includes a `ready_for_review` column
+- `TaskReviewActions.jsx` handles approve and reject controls
+- Reject flow opens a feedback modal and submits feedback as a comment
 
-```bash
-npm run build
-```
+### AI Estimation
 
-Build artifacts are output to `dist/` for deployment.
+`AiEstimationCard.jsx` displays:
+
+- Estimated days
+- Risk level badge: low, medium, high
+- AI comment
+- Recalculate action
+
+It is embedded in the admin project detail page.
 
 ## Backend Integration
 
-The frontend connects to a Laravel API at `http://application_de_gestion_des_projets.test`.
+The frontend uses:
 
-**Vite Proxy Configuration** (vite.config.mjs):
-```javascript
-server: {
-  proxy: {
-    '/api': {
-      target: 'http://application_de_gestion_des_projets.test',
-      changeOrigin: true
-    }
-  }
-}
+```js
+baseURL: import.meta.env.VITE_API_URL || 'http://application_de_gestion_des_projets.test'
 ```
 
-This proxies all `/api/*` requests to the backend during development. See [Backend Integration](#backend-integration) in the main [README_backend_overview.md](../README_backend_overview.md) for API endpoints and authentication flow.
+Configure `VITE_API_URL` in a local `.env` file when using a different API host. The current Vite development proxy sends `/api` requests to `http://project_manager.test` and preserves the `/api` prefix.
 
-### Test Credentials
+Expected API groups include:
 
-Default seed users (from backend seeder):
+- `/api/login`
+- `/api/logout`
+- `/api/admin/dashboard`
+- `/api/employee/dashboard`
+- `/api/client/dashboard`
+- `/api/admin/projects`
+- `/api/admin/users`
+- `/api/admin/requests`
+- `/api/employee/tasks`
+- `/api/tasks/:id/mark-ready`
+- `/api/tasks/:id/approve`
+- `/api/tasks/:id/reject`
+- `/api/comments`
+
+## Test Credentials
+
+Default seed users from the Laravel backend:
 
 | Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@example.com | password |
-| Employee | employee@example.com | password |
-| Client | client@example.com | password |
+| --- | --- | --- |
+| Admin | `admin@example.com` | `password` |
+| Employee | `employee@example.com` | `password` |
+| Client | `client@example.com` | `password` |
 
 ## Available Scripts
 
+The scripts currently defined in `package.json` are:
+
 ```bash
-# Start dev server with hot reload
-npm run dev
-
-# Build for production
+npm run start
 npm run build
-
-# Preview production build locally
-npm run preview
-
-# Lint code with ESLint
+npm run serve
 npm run lint
-
-# Format code with Prettier
-npm run format
-
-# Run type checking (if TypeScript)
-npm run type-check
 ```
 
-## Project Dependencies Overview
+Notes:
 
-### Core Dependencies
-- `react` — UI library
-- `react-dom` — React rendering
-- `react-router-dom` — Client-side routing
-- `axios` — HTTP client
-- `@reduxjs/toolkit` — Redux state management
-- `react-redux` — React bindings for Redux
-- `@coreui/react` — Admin template components
+- `npm run start` starts the Vite dev server.
+- `npm run build` creates the production build in `build/`.
+- `npm run serve` runs Vite preview.
+- `npm run lint` runs ESLint.
 
-### UI & UX Libraries
-- `@coreui/icons-react` — Icon library
-- `lucide-react` — Additional icons
-- `chart.js` — Charts
-- `@coreui/react-chartjs` — React chart integration
-- `framer-motion` — Animations
-- `@dnd-kit/` — Drag-and-drop
+## Development Notes
 
-### Dev Dependencies
-- `vite` — Build tool
-- `eslint` — Code linting
-- `prettier` — Code formatting
-- `@vitejs/plugin-react` — React plugin for Vite
+- Keep page-level components in `src/views/`.
+- Keep reusable components in `src/components/`.
+- Use CoreUI components for dashboard UI: cards, buttons, badges, forms, modals, layout, and tables.
+- Use `src/api.js` for all backend calls.
+- Use `AuthContext` for auth state and role-aware rendering.
+- Prefer local component state with `useState` for forms and modals.
+- Avoid adding new state libraries unless a feature truly needs one.
 
-## Architecture Decision Records
+## Known Notes From Scan
 
-### Why Vite over Create React App?
-- **Performance** — Instant HMR (hot module replacement) even with large apps
-- **Build Speed** — 10x faster builds
-- **Modern Tooling** — Leverages native ES modules, esbuild
-- **Less Configuration** — Works out-of-the-box for most cases
+- `build_vite.txt` records a successful Vite build, but it is a generated output file and should not be treated as source.
+- `build_output.txt` appears stale and references a different machine path from an older build attempt.
+- Some navigation entries point to routes that are not yet implemented, especially several client pages and admin task/report placeholders.
 
-### Why Hybrid State Management?
-- **Redux** — Overkill for just auth state; we use it only for persistent UI state (sidebar, theme)
-- **Context + localStorage** — Simpler for auth, avoids Redux boilerplate
-- **Result** — Best of both worlds: lean auth, persistent UI state
+## Related Docs
 
-### Why CoreUI Components?
-- **Comprehensive** — 600+ components out-of-the-box
-- **Admin-Focused** — Designed for dashboards and data management
-- **Consistent** — Bootstrap-based, familiar design patterns
-- **Accessibility** — Built-in ARIA support
-
-## Resources
-
-- [React Docs](https://react.dev)
-- [Vite Docs](https://vitejs.dev)
-- [React Router Docs](https://reactrouter.com)
-- [CoreUI React Components](https://coreui.io/react/docs/components/)
-- [Redux Toolkit Docs](https://redux-toolkit.js.org)
-- [Axios Docs](https://axios-http.com)
-
-## License
-
-MIT
+- `ARCHITECTURE.md`
+- `DEVELOPMENT.md`
+- `../README_backend_overview.md`

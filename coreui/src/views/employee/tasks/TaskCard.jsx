@@ -134,7 +134,7 @@ const TaskCard = ({ task, onStatusChange, onClick }) => {
               </div>
               
               <CDropdown alignment="end">
-                <CDropdownToggle color="transparent" className="p-1 border-0 shadow-none">
+                <CDropdownToggle caret={false} color="transparent" className="p-1 border-0 shadow-none">
                   <CIcon icon={cilOptions} className="text-muted" />
                 </CDropdownToggle>
                 <CDropdownMenu>
@@ -197,7 +197,7 @@ const TaskCard = ({ task, onStatusChange, onClick }) => {
                     onClick={handleExpandAll}
                   >
                     <CIcon icon={cilExpandDown} size="sm" />
-                    {isAllExpanded ? 'Collapse All' : 'Expand All'}
+                    {isAllExpanded ? 'All' : 'All'}
                   </CButton>
                 </>
               )}

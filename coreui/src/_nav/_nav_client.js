@@ -1,72 +1,50 @@
-/**
- * Sidebar Navigation — Client Role
- */
-
 import React from 'react'
 import CIcon from '@coreui/icons-react'
 import {
-  cilSpeedometer,
+  cilBell,
   cilBriefcase,
-  cilCommentSquare,
   cilCalendar,
+  cilCommentSquare,
   cilSettings,
-  cilFile,
-  cilChart,
+  cilSpeedometer,
 } from '@coreui/icons'
 import { CNavItem, CNavTitle } from '@coreui/react'
 
 const _nav = [
-  // ── Dashboard ─────────────────────────────────────────
   {
     component: CNavItem,
     name: 'Dashboard',
-    to: '/dashboard',
+    to: '/client/dashboard',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
   },
-
-  // ── My Projects ───────────────────────────────────────
   {
     component: CNavTitle,
-    name: 'My Projects',
+    name: 'Client Workspace',
   },
   {
     component: CNavItem,
-    name: 'All Projects',
+    name: 'Projects',
     to: '/client/projects',
     icon: <CIcon icon={cilBriefcase} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
-    name: 'Project Progress',
-    to: '/client/progress',
-    icon: <CIcon icon={cilChart} customClassName="nav-icon" />,
+    name: 'Notifications',
+    to: '/client/notifications',
+    icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
-    name: 'Comments',
-    to: '/client/comments',
+    name: 'Messages',
+    to: '/client/messages',
     icon: <CIcon icon={cilCommentSquare} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
-    name: 'Documents',
-    to: '/client/documents',
-    icon: <CIcon icon={cilFile} customClassName="nav-icon" />,
-  },
-
-  // ── Workspace ───────────────────────────────────────────
-  {
-    component: CNavTitle,
-    name: 'Workspace',
-  },
-  {
-    component: CNavItem,
-    name: 'Calendar',
-    to: '/workspace/calendar',
+    name: 'Timeline',
+    to: '/client/timeline',
     icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
   },
-
-  // ── Account ─────────────────────────────────────────────
   {
     component: CNavTitle,
     name: 'Account',

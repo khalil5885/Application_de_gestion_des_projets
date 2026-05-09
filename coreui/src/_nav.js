@@ -72,13 +72,14 @@ const _nav = [
     to: '/workspace/calendar',
     icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
   },
+  
   {
-    component: CNavItem,
-    name: 'Activity',
-    to: '/workspace/activity',
-    icon: <CIcon icon={cilHistory} customClassName="nav-icon" />,
-    role:['admin'],
-  },
+      component: CNavItem,
+      name: 'Activity',
+      to: '/workspace/activity',
+      icon: <CIcon icon={cilHistory} customClassName="nav-icon" />,
+      role:['admin'],
+    },
 
   // ── Account ─────────────────────────────────────────────
   {

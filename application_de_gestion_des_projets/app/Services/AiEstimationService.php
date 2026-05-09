@@ -8,45 +8,42 @@ use RuntimeException;
 
 class AiEstimationService
 {
-    public function estimate(Project $project): array
+     public function estimate(Project $project): array
     {
         $project->loadMissing('tasks');
 
-        $apiKey = config('services.openai.key');
-        if (!$apiKey) {
-            throw new RuntimeException('OpenAI API key is not configured.');
+        $taskCount = $project->tasks->count();
+        $highPriorityCount = $project->tasks->where('priority', 'high')->count();
+        $mediumPriorityCount = $project->tasks->where('priority', 'medium')->count();
+        $overdueCount = $project->tasks->filter(fn($t) => 
+            $t->due_date && $t->due_date->isPast() && $t->status !== 'done'
+        )->count();
+        
+        // Simple heuristic
+        $baseDays = max(1, $taskCount * 2);
+        $extraDays = $highPriorityCount * 3;
+        $totalDays = $baseDays + $extraDays;
+
+        $riskLevel = 'low';
+        if ($overdueCount > 2 || ($highPriorityCount / max($taskCount, 1)) > 0.5) {
+            $riskLevel = 'high';
+        } elseif ($overdueCount > 0 || ($highPriorityCount / max($taskCount, 1)) > 0.3) {
+            $riskLevel = 'medium';
         }
 
-        $response = Http::withToken($apiKey)
-            ->acceptJson()
-            ->asJson()
-            ->post(rtrim(config('services.openai.base_url'), '/') . '/responses', [
-                'model' => config('services.openai.model'),
-                'instructions' => 'You estimate project delivery timelines for a project management SaaS. Return only the requested JSON shape.',
-                'input' => $this->buildPrompt($project),
-                'text' => [
-                    'format' => [
-                        'type' => 'json_schema',
-                        'name' => 'project_estimation',
-                        'strict' => true,
-                        'schema' => [
-                            'type' => 'object',
-                            'additionalProperties' => false,
-                            'properties' => [
-                                'estimated_days' => ['type' => 'integer', 'minimum' => 1],
-                                'risk_level' => ['type' => 'string', 'enum' => ['low', 'medium', 'high']],
-                                'ai_comment' => ['type' => 'string'],
-                            ],
-                            'required' => ['estimated_days', 'risk_level', 'ai_comment'],
-                        ],
-                    ],
-                ],
-            ])
-            ->throw()
-            ->json();
+        $comments = [
+            'low' => 'Project scope is well-defined with manageable workload. Timeline appears realistic based on current task distribution.',
+            'medium' => 'Moderate complexity detected due to high-priority task concentration. Recommend close monitoring and daily standups.',
+            'high' => 'Critical risk identified: multiple overdue tasks and/or excessive high-priority items. Immediate replanning required.',
+        ];
 
-        return $this->normalizeEstimate($this->extractOutputText($response));
+        return [
+            'estimated_days' => $totalDays,
+            'risk_level' => $riskLevel,
+            'ai_comment' => $comments[$riskLevel] . ' (Based on ' . $taskCount . ' tasks: ' . $highPriorityCount . ' high, ' . $mediumPriorityCount . ' medium priority)',
+        ];
     }
+
 
     protected function buildPrompt(Project $project): string
     {

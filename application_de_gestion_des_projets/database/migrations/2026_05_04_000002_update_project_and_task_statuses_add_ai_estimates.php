@@ -10,8 +10,8 @@ return new class extends Migration
     public function up(): void
     {
         if (Schema::getConnection()->getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE tasks MODIFY status ENUM('pending', 'todo', 'in_progress', 'ready_for_review', 'review', 'completed', 'done', 'blocked') DEFAULT 'pending'");
-            DB::statement("ALTER TABLE projects MODIFY status ENUM('pending', 'in_progress', 'ready_for_review', 'completed', 'on_hold') DEFAULT 'pending'");
+            DB::statement("ALTER TABLE tasks MODIFY status ENUM('todo', 'in_progress', 'ready_for_review', 'done', 'on_hold') DEFAULT 'todo'");
+            DB::statement("ALTER TABLE projects MODIFY status ENUM('todo', 'in_progress', 'ready_for_review', 'done', 'on_hold') DEFAULT 'todo'");
         }
 
         Schema::table('projects', function (Blueprint $table) {
@@ -28,8 +28,8 @@ return new class extends Migration
         });
 
         if (Schema::getConnection()->getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE projects MODIFY status ENUM('pending', 'in_progress', 'completed', 'on_hold') DEFAULT 'pending'");
-            DB::statement("ALTER TABLE tasks MODIFY status ENUM('todo', 'in_progress', 'review', 'done', 'blocked') DEFAULT 'todo'");
+            DB::statement("ALTER TABLE projects MODIFY status ENUM('todo', 'in_progress', 'ready_for_review', 'done', 'on_hold') DEFAULT 'todo'");
+            DB::statement("ALTER TABLE tasks MODIFY status ENUM('todo', 'in_progress', 'ready_for_review', 'done', 'on_hold') DEFAULT 'todo'");
         }
     }
 };

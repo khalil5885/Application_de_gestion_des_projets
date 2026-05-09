@@ -1,33 +1,22 @@
-/**
- * Sidebar Navigation — Admin Role
- */
-
 import React from 'react'
 import CIcon from '@coreui/icons-react'
 import {
-  cilSpeedometer,
   cilBriefcase,
-  cilPeople,
-  cilCalendar,
   cilHistory,
+  cilPeople,
   cilSettings,
-  cilChartPie,
-  cilFolderOpen,
+  cilSpeedometer,
   cilTask,
-  cilUserFollow,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
 const _nav = [
-  // ── Dashboard ─────────────────────────────────────────
   {
     component: CNavItem,
     name: 'Dashboard',
     to: '/dashboard',
     icon: <CIcon icon={cilSpeedometer} customClassName="nav-icon" />,
   },
-
-  // ── Management ────────────────────────────────────────
   {
     component: CNavTitle,
     name: 'Management',
@@ -56,51 +45,26 @@ const _nav = [
     ],
   },
   {
-    component: CNavGroup,
-    name: 'Tasks',
-    to: '/admin/tasks',
-    icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
-    items: [
-      {
-        component: CNavItem,
-        name: 'All Tasks',
-        to: '/admin/tasks',
-      },
-      {
-        component: CNavItem,
-        name: 'Assignments',
-        to: '/admin/task-assignments',
-      },
-    ],
-  },
-  {
     component: CNavItem,
     name: 'Requests',
     to: '/admin/requests',
     icon: <CIcon icon={cilTask} customClassName="nav-icon" />,
   },
   {
-    component: CNavGroup,
+    component: CNavItem,
+    name: 'Team Workload',
+    to: '/admin/workload',
+    icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
     name: 'Users',
     to: '/admin/users',
     icon: <CIcon icon={cilPeople} customClassName="nav-icon" />,
-    items: [
-      {
-        component: CNavItem,
-        name: 'All Users',
-        to: '/admin/users',
-      },
-      {
-        component: CNavItem,
-        name: 'Clients',
-        to: '/admin/clients',
-      },
-      {
-        component: CNavItem,
-        name: 'Employees',
-        to: '/admin/employees',
-      },
-    ],
+  },
+  {
+    component: CNavTitle,
+    name: 'Workspace',
   },
   {
     component: CNavItem,
@@ -108,32 +72,6 @@ const _nav = [
     to: '/workspace/activity',
     icon: <CIcon icon={cilHistory} customClassName="nav-icon" />,
   },
-
-  // ── Reports ─────────────────────────────────────────────
-  {
-    component: CNavTitle,
-    name: 'Reports',
-  },
-  {
-    component: CNavItem,
-    name: 'Analytics',
-    to: '/admin/analytics',
-    icon: <CIcon icon={cilChartPie} customClassName="nav-icon" />,
-  },
-
-  // ── Workspace ───────────────────────────────────────────
-  {
-    component: CNavTitle,
-    name: 'Workspace',
-  },
-  {
-    component: CNavItem,
-    name: 'Calendar',
-    to: '/workspace/calendar',
-    icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
-  },
-
-  // ── Account ─────────────────────────────────────────────
   {
     component: CNavTitle,
     name: 'Account',

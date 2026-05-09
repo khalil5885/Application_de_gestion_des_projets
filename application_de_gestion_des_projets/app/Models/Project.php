@@ -77,10 +77,47 @@ class Project extends Model
     public function refreshProgress(): void
     {
         $totalTasks = $this->tasks()->count();
-        $completedTasks = $this->tasks()->whereIn('status', ['completed', 'done'])->count();
+        $completedTasks = $this->tasks()->whereIn('status', ['done'])->count();
 
         $this->forceFill([
             'progress' => $totalTasks === 0 ? 0 : (int) round(($completedTasks / $totalTasks) * 100),
         ])->saveQuietly();
     }
+    public function hasSubtasks(): bool
+{
+    if ($this->relationLoaded('children')) {
+        return $this->children->isNotEmpty();
+    }
+
+    return $this->children()->exists();
+}
+
+public function progress(): int
+{
+    // If task has subtasks -> calculate from children
+    if ($this->hasSubtasks()) {
+
+        $children = $this->children;
+
+        if ($children->count() === 0) {
+            return 0;
+        }
+
+        $totalProgress = $children->sum(function ($child) {
+            return $child->progress();
+        });
+
+        return (int) round($totalProgress / $children->count());
+    }
+
+    // Simple task progress based on status
+    return match ($this->status) {
+        'done' => 100,
+        'ready_for_review' => 90,
+        'in_progress' => 50,
+        'todo' => 0,
+        'on_hold' => 0,
+        default => 0,
+    };
+}
 }

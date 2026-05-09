@@ -14,8 +14,9 @@ return new class extends Migration
             $table->foreignId('parent_id')->nullable()->constrained('tasks')->nullOnDelete();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->enum('status', ['todo', 'in_progress', 'review', 'done', 'blocked'])->default('todo');
+            $table->enum('status', ['todo', 'in_progress', 'ready_for_review', 'done', 'on_hold'])->default('todo');
             $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
+            $table->unsignedTinyInteger('progress')->default(0);
             $table->date('due_date')->nullable();
             $table->foreignId('assigned_to')->nullable()->constrained('users')->nullOnDelete();
             $table->unsignedInteger('order')->default(0);

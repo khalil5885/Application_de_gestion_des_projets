@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useSearchParams } from 'react-router-dom'
 import { 
   CBadge, 
   CButton, 
@@ -62,17 +62,19 @@ import ProjectCard from '../../../components/project/ProjectCard';
 import ProjectDrawer from '../../../components/project/ProjectDrawer';
 
 const STATUS_COLUMNS = [
-  { key: 'pending',     label: 'Pending',    color: 'warning' },
-  { key: 'in_progress', label: 'In Progress', color: 'primary' },
-  { key: 'completed',   label: 'Completed',   color: 'success' },
-  { key: 'on_hold',     label: 'On Hold',     color: 'danger'  },
+  { key: 'todo',             label: 'To Do',           color: 'warning' },
+  { key: 'in_progress',      label: 'In Progress',     color: 'primary' },
+  { key: 'ready_for_review', label: 'Ready for Review', color: 'info' },
+  { key: 'done',             label: 'Done',            color: 'success' },
+  { key: 'on_hold',          label: 'On Hold',         color: 'danger'  },
 ]
 
 const STATUS_CONFIG = {
-  pending:     { label: 'Pending',     color: 'warning',  bg: 'rgba(255, 193, 7, 0.12)', text: '#d39e00' },
-  in_progress: { label: 'In Progress', color: 'primary',  bg: 'rgba(50, 31, 219, 0.12)', text: '#321fdb' },
-  completed:   { label: 'Completed',   color: 'success',  bg: 'rgba(46, 184, 92, 0.12)', text: '#2eb85c' },
-  on_hold:     { label: 'On Hold',     color: 'danger',   bg: 'rgba(229, 83, 83, 0.12)', text: '#e55353' },
+  todo:             { label: 'To Do',           color: 'warning',  bg: 'rgba(255, 193, 7, 0.12)', text: '#d39e00' },
+  in_progress:      { label: 'In Progress',     color: 'primary',  bg: 'rgba(50, 31, 219, 0.12)', text: '#321fdb' },
+  ready_for_review: { label: 'Ready for Review', color: 'info',    bg: 'rgba(13, 202, 240, 0.12)', text: '#0dcaf0' },
+  done:             { label: 'Done',            color: 'success',  bg: 'rgba(46, 184, 92, 0.12)', text: '#2eb85c' },
+  on_hold:          { label: 'On Hold',         color: 'danger',   bg: 'rgba(229, 83, 83, 0.12)', text: '#e55353' },
 }
 
 const PRIORITY_CONFIG = {
@@ -320,7 +322,7 @@ const ProjectTableView = ({
                 style={{ cursor: 'pointer', width: 130 }}
               >
                 <div className="d-flex align-items-center gap-1">
-                  <CIcon icon={cilCalendar} size="sm" className="me-1" />Deadline <SortIcon column="deadline" />
+                  <CIcon icon={cilCalendar} size="sm" className="me-1"/>Deadline <SortIcon column="deadline" />
                 </div>
               </CTableHeaderCell>
               <CTableHeaderCell className="text-end pe-4" style={{ width: 60 }}>
@@ -481,7 +483,7 @@ const ProjectTableView = ({
                     <CTableDataCell>
                       <div className="d-flex flex-column">
                         <span className="small fw-medium">{formatDate(project.deadline)}</span>
-                        {project.deadline && new Date(project.deadline) < new Date() && project.status !== 'completed' && (
+                        {project.deadline && new Date(project.deadline) < new Date() && project.status !== 'done' && (
                           <CBadge color="danger" shape="rounded-pill" className="small mt-1" style={{ width: 'fit-content' }}>
                             Overdue
                           </CBadge>
@@ -558,13 +560,17 @@ const ProjectTableView = ({
 
 const ProjectManagement = () => {
   const { user } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [projects, setProjects] = useState([])
   const [loading, setLoading] = useState(true)
   const [showCreate, setShowCreate] = useState(false)
   const [search, setSearch] = useState('')
   const [activeId, setActiveId] = useState(null)
   const [viewMode, setViewMode] = useState('kanban') // 'kanban' | 'table'
-  const [statusFilter, setStatusFilter] = useState(null)
+  
+  // Read status from URL query param on mount
+  const urlStatus = searchParams.get('status')
+  const [statusFilter, setStatusFilter] = useState(urlStatus)
   
   const [selectedProject, setSelectedProject] = useState(null)
   const [showDrawer, setShowDrawer] = useState(false)
@@ -588,6 +594,19 @@ const ProjectManagement = () => {
   }, [])
 
   useEffect(() => { fetchProjects() }, [fetchProjects])
+
+  // Sync URL when statusFilter changes
+  const handleStatusFilterChange = useCallback((newStatus) => {
+    setStatusFilter(prev => {
+      const next = prev === newStatus ? null : newStatus
+      if (next) {
+        setSearchParams({ status: next })
+      } else {
+        setSearchParams({})
+      }
+      return next
+    })
+  }, [setSearchParams])
 
   const handleDragStart = (event) => setActiveId(event.active.id);
 
@@ -689,7 +708,7 @@ const ProjectManagement = () => {
                 color={isActive ? 'primary' : 'light'}
                 size="sm"
                 className="d-flex align-items-center gap-2"
-                onClick={() => setStatusFilter(prev => prev === col.key ? null : col.key)}
+                onClick={() => handleStatusFilterChange(col.key)}
                 style={{
                   border: isActive ? '1px solid var(--cui-primary)' : '1px solid rgba(0,0,0,0.08)',
                   backgroundColor: isActive ? 'var(--cui-primary)' : undefined

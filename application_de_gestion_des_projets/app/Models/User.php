@@ -16,17 +16,9 @@ class User extends Authenticatable
     protected string $guard_name = 'sanctum';
 
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'global_role',
-        'phone',
-        'avatar',
-        'is_active',
-        'setup_token',
-        'setup_token_expires_at',
-        'email_verified_at',
-    ];
+    'name', 'email', 'password', 'global_role', 'phone', 'avatar', 'is_active',
+    'setup_token', 'setup_token_expires_at', // ← add these
+];
 
     protected $hidden = [
         'password',

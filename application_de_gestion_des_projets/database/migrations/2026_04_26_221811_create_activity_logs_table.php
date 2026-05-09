@@ -15,6 +15,7 @@ return new class extends Migration
             $table->string('description')->nullable();
             $table->morphs('loggable');
             $table->json('properties')->nullable();
+            $table->enum('visibility', ['internal', 'client'])->default('internal');
             $table->timestamps();
         });
     }
