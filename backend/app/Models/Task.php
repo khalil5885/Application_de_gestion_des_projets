@@ -79,14 +79,11 @@ class Task extends Model
     public function children(): HasMany
     {
         return $this->hasMany(Task::class, 'parent_id')
-            ->with(['childrenRecursive', 'assignee'])
+            ->with(['children', 'assignee'])
             ->orderBy('order');
     }
 
-    public function childrenRecursive(): HasMany
-    {
-        return $this->children()->with('childrenRecursive');
-    }
+    
 
     public function assignee(): BelongsTo
     {
@@ -166,5 +163,7 @@ class Task extends Model
     public function isMilestone(): bool
 {
     return $this->parent_id === null;
+    
 }
+
 }

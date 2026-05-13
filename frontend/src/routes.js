@@ -23,7 +23,7 @@ const TasksPage = React.lazy(() => import('./views/admin/TasksOverview'))
 const EmployeeTaskDashboard = React.lazy(
   () => import('./views/employee/tasks/EmployeeTaskDashboard'),
 )
-const ClientDashboard = React.lazy(() => import('./views/client/Dashboard'))
+
 const ClientProjects = React.lazy(() => import('./views/client/Projects'))
 const ClientProjectDetail = React.lazy(() => import('./views/client/ProjectDetail'))
 const ClientTimeline = React.lazy(() => import('./views/client/Timeline'))
@@ -126,7 +126,7 @@ const routes = [
   {
     path: '/client/dashboard',
     name: 'Client Dashboard',
-    element: withRoles(ClientDashboard, ['client']),
+    element: withRoles(Dashboard, ['client']),
   },
   {
     path: '/client/projects',

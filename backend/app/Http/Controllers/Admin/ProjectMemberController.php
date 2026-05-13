@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Notification;
+use App\Services\NotificationService;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use Illuminate\Http\Request;
@@ -27,11 +27,10 @@ class ProjectMemberController extends Controller
             ['role' => $data['role'] ?? 'developer']
         );
 
-        Notification::create([
-            'user_id' => $data['employee_id'],
-            'type' => 'project_assigned',
-            'data' => ['project_id' => $project->id, 'project_name' => $project->name],
-        ]);
+       NotificationService::send([$data['employee_id']], 'project_assigned', [
+    'project_id'   => $project->id,
+    'project_name' => $project->name,
+]);
 
         return response()->json($member->load('employee'), 201);
     }

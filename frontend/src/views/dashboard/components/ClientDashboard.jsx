@@ -160,7 +160,7 @@ const ClientDashboard = ({ data }) => {
   const avgPct     = Number(s.avg_progress || 0)
 
   const delayedProjects = useMemo(
-    () => projects.filter(p => p.status === 'delayed' || p.status === 'overdue'),
+    () => projects.filter(p => p.status === 'on_hold' || p.status === 'overdue'),
     [projects]
   )
 
@@ -175,7 +175,7 @@ const ClientDashboard = ({ data }) => {
             label="My projects"
             value={s.total_projects ?? 0}
             color="primary"
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/client/projects')}
           />
         </CCol>
         <CCol xs={12} sm={6} xl={3}>
@@ -184,7 +184,7 @@ const ClientDashboard = ({ data }) => {
             label="In progress"
             value={s.active_projects ?? 0}
             color="warning"
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/client/projects')}
           />
         </CCol>
         <CCol xs={12} sm={6} xl={3}>
@@ -193,7 +193,7 @@ const ClientDashboard = ({ data }) => {
             label="Completed"
             value={s.completed_projects ?? 0}
             color="success"
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/client/projects')}
           />
         </CCol>
         <CCol xs={12} sm={6} xl={3}>
@@ -209,7 +209,7 @@ const ClientDashboard = ({ data }) => {
       {/* ── Row 2: Secondary metrics ──────────────────────────────────────── */}
       <CRow className="g-3 mb-4">
         <CCol xs={6} xl={3}>
-          <MetricCard icon={cilWarning}      label="Delayed projects"    value={s.delayed_projects ?? 0}             color="danger"  onClick={() => navigate('/projects')} />
+          <MetricCard icon={cilWarning}      label="Delayed projects"    value={s.delayed_projects ?? 0}             color="danger"  onClick={() => navigate('/client/projects')} />
         </CCol>
         <CCol xs={6} xl={3}>
           <MetricCard icon={cilClock}        label="Upcoming milestones" value={milestones.length}                   color="warning" />
@@ -228,7 +228,7 @@ const ClientDashboard = ({ data }) => {
           <div className="dash-card">
             <SectionHeader
               title="Your projects"
-              action={() => navigate('/projects')}
+              action={() => navigate('/client/projects')}
               actionLabel="View all →"
             />
             {projects.length > 0
@@ -236,7 +236,7 @@ const ClientDashboard = ({ data }) => {
                   <ProjectProgressItem
                     key={p.id ?? i}
                     project={p}
-                    onClick={() => navigate(`/projects/${p.id}`)}
+                    onClick={() => navigate(`/client/projects/${p.id}`)}
                   />
                 ))
               : <EmptyState icon={cilBriefcase} message="No projects assigned yet." />

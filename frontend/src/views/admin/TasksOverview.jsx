@@ -28,6 +28,7 @@ import { cilFilter, cilSearch, cilChartPie, cilUser, cilCalendar, cilFlagAlt, ci
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Filler } from 'chart.js'
 import { Pie, Bar, Line } from 'react-chartjs-2'
 import api from '../../api'
+import TaskDetailSidebar from '../../components/task/TaskDetailSidebar' // adjust path if needed
 
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement, Title, Filler)
@@ -104,6 +105,10 @@ const TasksOverview = () => {
     readyForReview: 0,
     completedThisWeek: 0,
   })
+
+  // ── Task Detail Sidebar State ─────────────────────────────────
+  const [selectedTaskId, setSelectedTaskId] = useState(null)
+  const [sidebarVisible, setSidebarVisible] = useState(false)
 
   const [filters, setFilters] = useState({
     status: [],
@@ -190,6 +195,25 @@ const TasksOverview = () => {
   useEffect(() => {
     fetchTasks(1)
   }, [filters.status, filters.employee_id, filters.client_id, filters.project_id, filters.priority, filters.from, filters.to, filters.overdue, debouncedSearch, fetchTasks])
+
+  // ── Task Detail Handlers ────────────────────────────────────
+  const handleTaskClick = (taskId) => {
+    setSelectedTaskId(taskId)
+    setSidebarVisible(true)
+  }
+
+  const handleCloseSidebar = () => {
+    setSidebarVisible(false)
+    setSelectedTaskId(null)
+  }
+
+  const handleTaskStatusChange = (taskId, newStatus) => {
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
+  }
+
+  const handleTaskUpdated = () => {
+    fetchTasks(currentPage)
+  }
 
   // ── Handlers ────────────────────────────────────────────────
   const handleFilterChange = (key, value) => {
@@ -573,7 +597,7 @@ const TasksOverview = () => {
                     </CTableDataCell>
                   </CTableRow>
                 ) : tasks.length === 0 ? (
-                  <CTableRow>
+                  <CTableRow >
                     <CTableDataCell colSpan={10} className="text-center py-5 text-muted">
                       <CIcon icon={cilSearch} size="xl" className="mb-2 d-block mx-auto opacity-25" />
                       No tasks found. Try adjusting your filters.
@@ -584,7 +608,11 @@ const TasksOverview = () => {
                     const health = getTaskHealth(task)
                     const healthCfg = HEALTH_CONFIG[health]
                     return (
-                      <CTableRow key={task.id}>
+                      <CTableRow 
+                        key={task.id} 
+                        onClick={() => handleTaskClick(task.id)}
+                        style={{ cursor: 'pointer' }}
+                      >
                         <CTableDataCell>
                           <div className="fw-semibold">{task.title}</div>
                           <div className="small text-muted text-truncate" style={{ maxWidth: '200px' }}>
@@ -634,7 +662,15 @@ const TasksOverview = () => {
                           </CBadge>
                         </CTableDataCell>
                         <CTableDataCell className="text-end">
-                          <CButton color="light" size="sm" variant="ghost" to={`/admin/tasks/${task.id}`}>
+                          <CButton 
+                            color="light" 
+                            size="sm" 
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleTaskClick(task.id)
+                            }}
+                          >
                             View
                           </CButton>
                         </CTableDataCell>
@@ -670,6 +706,16 @@ const TasksOverview = () => {
           )}
         </CCardBody>
       </CCard>
+
+      {/* ── TASK DETAIL SIDEBAR ───────────────────────────────── */}
+      <TaskDetailSidebar
+        taskId={selectedTaskId}
+        visible={sidebarVisible}
+        onClose={handleCloseSidebar}
+        onStatusChange={handleTaskStatusChange}
+        onTaskUpdated={handleTaskUpdated}
+        isAdmin={true}
+      />
     </div>
   )
 }

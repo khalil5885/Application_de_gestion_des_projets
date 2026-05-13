@@ -14,7 +14,8 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Client\DashboardController as ClientDashboardController;
 use App\Http\Controllers\Client\ProjectController as ClientProjectController;
 use App\Http\Controllers\Client\ActivityController as ClientActivityController;
-use App\Http\Controllers\Employee\CommentController as EmployeeCommentController;
+use App\Http\Controllers\CommentController;
+
 use App\Http\Controllers\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Employee\ProjectController as EmployeeProjectController;
 use App\Http\Controllers\Employee\RequestController as EmployeeRequestController;
@@ -44,6 +45,11 @@ Route::middleware(['auth:sanctum', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
+        Route::patch('tasks/{task}/finalize-review', [TaskController::class, 'finalizeReview']);
+        Route::patch('projects/{project}/finalize-review', [ProjectController::class, 'finalizeReview']);
+        Route::post('tasks/{task}/comments', [CommentController::class, 'storeOnTask']);
+        Route::post('projects/{project}/comments', [CommentController::class, 'storeOnProject']);
+        Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
         Route::get('/dashboard', [DashboardController::class, 'index']);
         Route::get('/dashboard/activity', [DashboardController::class, 'getRecentActivity']);
         Route::get('/activity-logs', [ActivityLogController::class, 'index']);
@@ -95,8 +101,9 @@ Route::middleware(['auth:sanctum', 'role:employee'])->prefix('employee')->group(
     Route::get('/tasks', [EmployeeTaskController::class, 'index']);
     Route::patch('/tasks/{task}/mark-ready', [EmployeeTaskController::class, 'markReadyForReview']);
     Route::patch('/tasks/{task}/status', [EmployeeTaskController::class, 'updateStatus']);
-    Route::post('/tasks/{task}/comments', [EmployeeCommentController::class, 'addTaskComment']);
-    Route::post('/projects/{project}/comments', [EmployeeCommentController::class, 'addProjectComment']);
+    Route::post('tasks/{task}/comments', [CommentController::class, 'storeOnTask']);
+    Route::post('projects/{project}/comments', [CommentController::class, 'storeOnProject']);
+    Route::delete('comments/{comment}', [CommentController::class, 'destroy']);
     Route::post('/tasks/suggest-order', [EmployeeTaskController::class, 'suggestOrder']);
 });
 

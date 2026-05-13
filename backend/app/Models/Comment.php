@@ -16,6 +16,7 @@ class Comment extends Model
         'commentable_type',
         'user_id',
         'content',
+        'visibility',
     ];
 
     public function commentable(): MorphTo

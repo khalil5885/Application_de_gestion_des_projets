@@ -14,6 +14,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->text('content');
             $table->timestamps();
+            $table->enum('visibility', ['public', 'internal', 'private'])->default('internal');
         });
     }
 

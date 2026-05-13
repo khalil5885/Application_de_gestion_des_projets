@@ -54,8 +54,7 @@ const Dashboard = () => {
           client: '/api/client/dashboard',
         }
 
-        console.log('Fetching dashboard for role:', role)  // Debug
-        console.log('Endpoint:', endpoints[role])           // Debug
+      
 
         const res = await api.get(endpoints[role])
         

@@ -408,9 +408,9 @@ const ProjectTableView = ({
                     <CTableDataCell>
                       <CDropdown>
                         <CDropdownToggle 
-                          color="transparent" 
+                          color="secondary"
+                          variant="ghost"
                           className="p-0 border-0 shadow-none d-flex align-items-center gap-2"
-                          style={{ background: 'transparent' }}
                         >
                           <span 
                             className="d-inline-flex align-items-center gap-2 px-2 py-1 rounded-pill small fw-medium"
@@ -644,11 +644,12 @@ const ProjectManagement = () => {
           {/* View Toggle */}
           <div 
             className="d-flex align-items-center p-1 rounded-3"
-            style={{ background: 'rgba(0,0,0,0.04)', border: '1px solid rgba(0,0,0,0.06)' }}
+            style={{ background: 'var(--cui-secondary-bg)', border: '1px solid var(--cui-border-color-translucent)' }}
           >
             <CTooltip content="Kanban View">
               <CButton
-                color={viewMode === 'kanban' ? 'primary' : 'transparent'}
+                color={viewMode === 'kanban' ? 'primary' : 'secondary'}
+                variant={viewMode === 'kanban' ? undefined : 'ghost'}
                 size="sm"
                 className="d-flex align-items-center gap-1 px-3"
                 onClick={() => setViewMode('kanban')}
@@ -663,7 +664,8 @@ const ProjectManagement = () => {
             </CTooltip>
             <CTooltip content="Table View">
               <CButton
-                color={viewMode === 'table' ? 'primary' : 'transparent'}
+                color={viewMode === 'table' ? 'primary' : 'secondary'}
+                variant={viewMode === 'table' ? undefined : 'ghost'}
                 size="sm"
                 className="d-flex align-items-center gap-1 px-3"
                 onClick={() => setViewMode('table')}
@@ -705,14 +707,11 @@ const ProjectManagement = () => {
             return (
               <CButton
                 key={col.key}
-                color={isActive ? 'primary' : 'light'}
+                color={isActive ? 'primary' : 'secondary'}
+                variant={isActive ? undefined : 'outline'}
                 size="sm"
                 className="d-flex align-items-center gap-2"
                 onClick={() => handleStatusFilterChange(col.key)}
-                style={{
-                  border: isActive ? '1px solid var(--cui-primary)' : '1px solid rgba(0,0,0,0.08)',
-                  backgroundColor: isActive ? 'var(--cui-primary)' : undefined
-                }}
               >
                 <span 
                   className="d-inline-block rounded-circle" 

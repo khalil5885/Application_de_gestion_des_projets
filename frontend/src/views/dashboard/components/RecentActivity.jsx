@@ -23,7 +23,7 @@ const RecentActivity = ({ activities }) => {
         </div>
         <CListGroup flush>
           {activities?.length === 0 && (
-            <p className="text-body-secondary small">No activity yet.</p>
+            <p className="text-body-secondary small">No  yet.</p>
           )}
           {activities?.map(item => {
             const userName = item.user?.name ?? item.user ?? ''

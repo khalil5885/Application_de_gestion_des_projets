@@ -263,7 +263,7 @@ const AdminDashboard = ({ data, navigate }) => {
           <div className="dash-card dash-card--scroll">
             <SectionHeader
               title="Recent activity"
-              action={() => navigate('/admin/activity-logs')}
+              action={() => navigate('/workspace/activity')}
               actionLabel="View all →"
             />
             {activities.length > 0
@@ -276,12 +276,12 @@ const AdminDashboard = ({ data, navigate }) => {
           <div className="dash-card dash-card--scroll">
             <SectionHeader
               title="Upcoming deadlines"
-              action={() => navigate('/admin/projects')}
+              action={() => navigate('/admin/tasks')}
               actionLabel="View all →"
             />
             {allDeadlines.length > 0
               ? allDeadlines.map((d, i) => <DeadlineItem key={d.id ?? i} deadline={d} />)
-              : <EmptyState icon={cilChart} message="No upcoming deadlines." action={() => navigate('/admin/projects')} actionLabel="Create a project" />
+              : <EmptyState icon={cilChart} message="No upcoming deadlines." action={() => navigate('/admin/tasks')} actionLabel="Create a project" />
             }
           </div>
         </CCol>

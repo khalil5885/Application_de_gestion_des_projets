@@ -26,7 +26,7 @@ class TaskResource extends JsonResource
             'completed_at' => $this->status === 'done' ? $this->updated_at?->toISOString() : null,
             // Relations
             'assignee' => UserResource::make($this->whenLoaded('assignee')),
-            'children' => TaskResource::collection($this->whenLoaded('children')),
+            'children' => TaskResource::collection($this->whenLoaded('children')),  
             'comments' => CommentResource::collection($this->whenLoaded('comments')),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

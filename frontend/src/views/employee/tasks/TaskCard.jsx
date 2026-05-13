@@ -106,8 +106,8 @@ const TaskCard = ({ task, onStatusChange, onClick }) => {
           <CTooltip content={!canComplete ? "Complete all subtasks first" : ""}>
             <div>
               <CFormCheck
-                checked={task.status === 'done'}
-                onChange={() => onStatusChange(task.id, task.status === 'done' ? 'todo' : 'done')}
+                checked={task.status === 'ready_for_review' || task.status === 'ready_for_review'}
+                onChange={() => onStatusChange(task.id, task.status === 'ready_for_review' || task.status === 'done' ? 'todo' : 'ready_for_review' || task.status === 'done')}
                 disabled={!canComplete}
                 className="mt-1"
               />

@@ -21,7 +21,9 @@ class Request extends Model
         'handled_by',
         'handled_at',
     ];
-
+    public const TYPE_EXTENSION = 'extension';
+    public const TYPE_TASK_REVIEW = 'task_review';
+    public const TYPE_PROJECT_REVIEW = 'project_review';
     protected function casts(): array
     {
         return [

@@ -22,7 +22,7 @@ import {
   STATUS_LABELS,
 } from './workloadUtils'
 
-const EmployeeTaskTable = ({ tasks }) => {
+const EmployeeTaskTable = ({ tasks, onTaskClick }) => {
   if (!tasks.length) {
     return (
       <CCard>
@@ -60,6 +60,8 @@ const EmployeeTaskTable = ({ tasks }) => {
               <CTableRow
                 key={task.id}
                 className={overdue ? 'workload-row-overdue' : ready ? 'workload-row-review' : ''}
+                onClick={() => onTaskClick?.(task.id)}
+                style={{ cursor: onTaskClick ? 'pointer' : 'default' }}
               >
                 <CTableDataCell>
                   <div className="fw-semibold">{task.title}</div>
@@ -107,6 +109,7 @@ const EmployeeTaskTable = ({ tasks }) => {
 
 EmployeeTaskTable.propTypes = {
   tasks: PropTypes.array.isRequired,
+  onTaskClick: PropTypes.func,
 }
 
 export default EmployeeTaskTable

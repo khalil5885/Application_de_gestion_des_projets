@@ -22,6 +22,7 @@ import CIcon from '@coreui/icons-react'
 import { cilArrowLeft, cilCalendar, cilSearch, cilUser, cilWarning } from '@coreui/icons'
 import api from '../../../api'
 import EmployeeTaskTable from '../../../components/workload/EmployeeTaskTable'
+import TaskDetailSidebar from '../../../components/task/TaskDetailSidebar'
 import EmployeePerformanceCard from '../../../components/workload/EmployeePerformanceCard'
 import WorkloadStatsCards from '../../../components/workload/WorkloadStatsCards'
 import {
@@ -49,6 +50,8 @@ const EmployeeWorkloadDetail = ({ user }) => {
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [selectedTaskId, setSelectedTaskId] = useState(null)
+  const [sidebarVisible, setSidebarVisible] = useState(false)
   const [filters, setFilters] = useState({
     status: '',
     priority: '',
@@ -115,6 +118,24 @@ const EmployeeWorkloadDetail = ({ user }) => {
   const updateFilters = (updater) => {
     setPage(1)
     setFilters(updater)
+  }
+
+  const handleTaskClick = (taskId) => {
+    setSelectedTaskId(taskId)
+    setSidebarVisible(true)
+  }
+
+  const handleCloseSidebar = () => {
+    setSidebarVisible(false)
+    setSelectedTaskId(null)
+  }
+
+  const handleTaskStatusChange = (taskId, newStatus) => {
+    setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task)))
+  }
+
+  const handleTaskUpdated = () => {
+    fetchEmployee()
   }
 
   if (loading && !employee)
@@ -325,7 +346,15 @@ const EmployeeWorkloadDetail = ({ user }) => {
           {pagination?.total != null ? ` of ${pagination.total}` : ''}
         </span>
       </div>
-      <EmployeeTaskTable tasks={tasks} />
+      <EmployeeTaskTable tasks={tasks} onTaskClick={handleTaskClick} />
+      <TaskDetailSidebar
+        taskId={selectedTaskId}
+        visible={sidebarVisible}
+        onClose={handleCloseSidebar}
+        onStatusChange={handleTaskStatusChange}
+        onTaskUpdated={handleTaskUpdated}
+        isAdmin={true}
+      />
       {pagination?.last_page > 1 && (
         <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mt-3">
           <span className="small text-body-secondary">

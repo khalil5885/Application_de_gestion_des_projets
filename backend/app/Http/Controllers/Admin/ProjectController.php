@@ -15,6 +15,7 @@ use App\Models\TaskTemplate;
 use App\Models\User;
 use App\Services\AiEstimationService;
 use Illuminate\Http\Request;
+use App\Services\NotificationService;
 
 class ProjectController extends Controller
 {
@@ -147,4 +148,35 @@ class ProjectController extends Controller
             );
         });
     }
+    public function finalizeReview(Request $request, Project $project)
+{
+    return $this->handle(function () use ($request, $project) {
+        abort_unless($project->status === 'in_review', 422, 'Project is not under review.');
+
+        $approved = $request->boolean('approved');
+
+        $project->update([
+            'status' => $approved ? 'completed' : 'needs_revision',
+            'reviewed_by' => $request->user()->id,
+            'reviewed_at' => now(),
+        ]);
+
+        $memberIds = $project->members()->pluck('users.id');
+
+        NotificationService::send($memberIds, 'project_final_review', [
+            'project_id' => $project->id,
+            'approved' => $approved,
+            'feedback' => $request->input('feedback'),
+        ]);
+
+        ActivityLog::record(
+            $request->user(),
+            $approved ? 'project_review_passed' : 'project_review_failed',
+            $project,
+            $approved ? 'Project approved.' : 'Project needs revision.'
+        );
+
+        return $this->successResponse(ProjectResource::make($project), 'Project review finalized.');
+    });
+}
 }

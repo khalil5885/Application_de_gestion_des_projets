@@ -11,6 +11,7 @@ import { cilArrowLeft, cilPlus, cilTask, cilCalendar, cilUser, cilTrash } from '
 import { motion, AnimatePresence } from 'motion/react'
 import api from '../../../api'
 import TaskReviewActions from '../../../components/task/TaskReviewActions'
+import TaskDetailSidebar from '../../../components/task/TaskDetailSidebar'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,7 @@ const initialForm = {
   title: '', description: '', priority: 'medium',
   status: 'todo', due_date: '', assigned_to: '',
 }
+
 
 const formatDate = (d) => {
   if (!d) return '—'
@@ -142,10 +144,10 @@ const CreateTaskModal = ({ visible, onClose, onCreated, projectId, members }) =>
 
 // ─── Task Card ────────────────────────────────────────────────────────────────
 
-const TaskCard = ({ task, members, onDragStart, onReviewed }) => {
+const TaskCard = ({ task, members, onDragStart, onReviewed, onClick }) => {
   const assignee = members.find(m => m.id === task.assigned_to)
   return (
-    <div className="task-card" draggable onDragStart={(e) => onDragStart(e, task.id)}>
+    <div className="task-card" draggable onDragStart={(e) => onDragStart(e, task.id)}onClick={() => onClick?.(task.id)} >
       <h6 className="fw-bold mb-3" style={{ lineHeight: 1.4, fontSize: '0.875rem' }}>{task.title}</h6>
       <div className="d-flex justify-content-between align-items-center">
         <CBadge color={PRIORITY_COLORS[task.priority] || 'warning'} shape="rounded-pill" className="px-3 py-1 text-uppercase fw-bold" style={{ fontSize: '0.6rem', letterSpacing: '1px' }}>
@@ -178,6 +180,7 @@ const TaskCard = ({ task, members, onDragStart, onReviewed }) => {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const TaskManagement = () => {
+  const [sidebarTaskId, setSidebarTaskId] = useState(null)
   const { id }   = useParams()
   const navigate = useNavigate()
 
@@ -437,6 +440,7 @@ const TaskManagement = () => {
                           members={members}
                           onDragStart={onDragStart}
                           onReviewed={handleTaskReviewed}
+                          onClick={(id) => setSidebarTaskId(id)} 
                         />
                       </motion.div>
                     ))
@@ -456,6 +460,14 @@ const TaskManagement = () => {
         projectId={parseInt(id)}
         members={members}
       />
+
+      <TaskDetailSidebar
+  taskId={sidebarTaskId}
+  visible={!!sidebarTaskId}
+  onClose={() => setSidebarTaskId(null)}
+  onTaskUpdated={fetchData}
+  isAdmin={true}
+/>
     </div>
   )
 }

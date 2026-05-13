@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\HandleRequestRequest;
 use App\Http\Resources\RequestResource;
 use App\Models\ActivityLog;
-use App\Models\Notification;
+use App\Services\NotificationService;
 use App\Models\Project;
 use App\Models\Request as UserRequest;
 use App\Models\Task;
@@ -23,7 +23,10 @@ class RequestController extends Controller
                 ->latest()
                 ->paginate(20);
 
-            return $this->successResponse($this->paginate($requests, RequestResource::class), 'Requests retrieved successfully.');
+            return $this->successResponse(
+                $this->paginate($requests, RequestResource::class),
+                'Requests retrieved successfully.'
+            );
         });
     }
 
@@ -44,9 +47,12 @@ class RequestController extends Controller
                     'handled_at' => now(),
                 ]);
 
-                if ($userRequest->type === 'extension') {
-                    $this->applyExtension($userRequest, $request->user());
-                }
+                match ($userRequest->type) {
+                    'extension' => $this->applyExtension($userRequest, $request->user()),
+                    'task_review' => $this->applyTaskReview($userRequest, $request->user()),
+                    'project_review' => $this->applyProjectReview($userRequest, $request->user()),
+                    default => abort(422, "Unknown request type: {$userRequest->type}"),
+                };
 
                 ActivityLog::record($request->user(), 'request_approved', $userRequest, 'Request approved.');
                 $this->notifyEmployee($userRequest, 'request_approved', $request->validated('feedback'));
@@ -54,7 +60,10 @@ class RequestController extends Controller
                 return $userRequest->fresh(['user', 'handledBy', 'requestable']);
             });
 
-            return $this->successResponse(RequestResource::make($userRequest), 'Request approved successfully.');
+            return $this->successResponse(
+                RequestResource::make($userRequest),
+                'Request approved successfully.'
+            );
         });
     }
 
@@ -81,13 +90,21 @@ class RequestController extends Controller
                     'handled_at' => now(),
                 ]);
 
+                // Revert status for review requests on rejection
+                if (in_array($userRequest->type, ['task_review', 'project_review'])) {
+                    $this->revertReviewStatus($userRequest);
+                }
+
                 ActivityLog::record($request->user(), 'request_rejected', $userRequest, 'Request rejected.');
                 $this->notifyEmployee($userRequest, 'request_rejected', $request->validated('feedback'));
 
                 return $userRequest->fresh(['user', 'handledBy', 'requestable']);
             });
 
-            return $this->successResponse(RequestResource::make($userRequest), 'Request rejected successfully.');
+            return $this->successResponse(
+                RequestResource::make($userRequest),
+                'Request rejected successfully.'
+            );
         });
     }
 
@@ -116,16 +133,56 @@ class RequestController extends Controller
         }
     }
 
+    protected function applyTaskReview(UserRequest $userRequest, $actor): void
+    {
+        $requestable = $userRequest->requestable;
+
+        abort_unless($requestable instanceof Task, 422, 'Invalid requestable for task review.');
+
+        $requestable->update(['status' => 'in_review']);
+
+        ActivityLog::record($actor, 'task_submitted_for_review', $requestable, 'Task submitted for review.', [
+            'request_id' => $userRequest->id,
+        ]);
+    }
+
+    protected function applyProjectReview(UserRequest $userRequest, $actor): void
+    {
+        $requestable = $userRequest->requestable;
+
+        abort_unless($requestable instanceof Project, 422, 'Invalid requestable for project review.');
+
+        $requestable->update(['status' => 'in_review']);
+
+        ActivityLog::record($actor, 'project_submitted_for_review', $requestable, 'Project submitted for review.', [
+            'request_id' => $userRequest->id,
+        ]);
+    }
+
+    protected function revertReviewStatus(UserRequest $userRequest): void
+    {
+        $requestable = $userRequest->requestable;
+
+        if ($requestable instanceof Task) {
+            $requestable->update(['status' => 'rejected']); // or 'needs_revision'
+            return;
+        }
+
+        if ($requestable instanceof Project) {
+            $requestable->update(['status' => 'rejected']); // or 'needs_revision'
+        }
+    }
+
     protected function notifyEmployee(UserRequest $userRequest, string $type, ?string $feedback = null): void
     {
-        Notification::create([
-            'user_id' => $userRequest->user_id,
-            'type' => $type,
-            'data' => [
+        NotificationService::send(
+            [$userRequest->user_id],
+            $type,
+            [
                 'request_id' => $userRequest->id,
                 'status' => $userRequest->status,
                 'feedback' => $feedback,
-            ],
-        ]);
+            ]
+        );
     }
 }
