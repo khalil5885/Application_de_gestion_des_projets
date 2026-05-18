@@ -139,7 +139,8 @@ class RequestController extends Controller
 
         abort_unless($requestable instanceof Task, 422, 'Invalid requestable for task review.');
 
-        $requestable->update(['status' => 'in_review']);
+        // ✅ APPROVED: mark task as done
+        $requestable->update(['status' => 'done']);
 
         ActivityLog::record($actor, 'task_submitted_for_review', $requestable, 'Task submitted for review.', [
             'request_id' => $userRequest->id,
@@ -152,7 +153,8 @@ class RequestController extends Controller
 
         abort_unless($requestable instanceof Project, 422, 'Invalid requestable for project review.');
 
-        $requestable->update(['status' => 'in_review']);
+        // ✅ APPROVED: mark project as done
+        $requestable->update(['status' => 'done']);
 
         ActivityLog::record($actor, 'project_submitted_for_review', $requestable, 'Project submitted for review.', [
             'request_id' => $userRequest->id,
@@ -164,12 +166,14 @@ class RequestController extends Controller
         $requestable = $userRequest->requestable;
 
         if ($requestable instanceof Task) {
-            $requestable->update(['status' => 'rejected']); // or 'needs_revision'
+            // ✅ REJECTED: revert task back to in_progress
+            $requestable->update(['status' => 'in_progress']);
             return;
         }
 
         if ($requestable instanceof Project) {
-            $requestable->update(['status' => 'rejected']); // or 'needs_revision'
+            // ✅ REJECTED: revert project back to in_progress
+            $requestable->update(['status' => 'in_progress']);
         }
     }
 

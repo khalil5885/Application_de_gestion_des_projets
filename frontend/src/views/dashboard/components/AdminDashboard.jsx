@@ -194,7 +194,7 @@ const AdminDashboard = ({ data, navigate }) => {
             delta={s.new_tasks_week}
             deltaLabel="this week"
             color="success"
-            onClick={() => navigate('/admin/projects')}
+            onClick={() => navigate('/admin/tasks')}
           />
         </CCol>
         <CCol xs={12} sm={6} xl={3}>
@@ -203,7 +203,7 @@ const AdminDashboard = ({ data, navigate }) => {
             label="Pending tasks"
             value={s.pending_tasks ?? 0}
             color="warning"
-            onClick={() => navigate('/admin/projects')}
+            onClick={() => navigate('/admin/tasks')}
           />
         </CCol>
         <CCol xs={12} sm={6} xl={3}>
@@ -276,12 +276,12 @@ const AdminDashboard = ({ data, navigate }) => {
           <div className="dash-card dash-card--scroll">
             <SectionHeader
               title="Upcoming deadlines"
-              action={() => navigate('/admin/tasks')}
+              action={() => navigate('/admin/projects')}
               actionLabel="View all →"
             />
             {allDeadlines.length > 0
               ? allDeadlines.map((d, i) => <DeadlineItem key={d.id ?? i} deadline={d} />)
-              : <EmptyState icon={cilChart} message="No upcoming deadlines." action={() => navigate('/admin/tasks')} actionLabel="Create a project" />
+              : <EmptyState icon={cilChart} message="No upcoming deadlines." action={() => navigate('/admin/projects')} actionLabel="Create a project" />
             }
           </div>
         </CCol>

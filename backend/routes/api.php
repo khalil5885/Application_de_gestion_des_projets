@@ -111,6 +111,6 @@ Route::middleware(['auth:sanctum', 'role:client'])->prefix('client')->group(func
     Route::get('/activity', [ClientActivityController::class, 'index']);
     Route::get('/projects', [ClientProjectController::class, 'index']);
     Route::get('/projects/{project}', [ClientProjectController::class, 'show']);
-    Route::post('/projects/{project}/comments', [ClientProjectController::class, 'addComment']);
+    Route::post('/projects/{project}/comments', [CommentController::class, 'storeOnProject']);
     Route::get('/dashboard', [ClientDashboardController::class, 'index']);
 });

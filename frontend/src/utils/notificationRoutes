@@ -1,0 +1,70 @@
+// utils/notificationRoutes.js  (or inline in NotificationsPage.jsx)
+//
+// How project-drawer opening works end-to-end
+// ────────────────────────────────────────────
+// 1. User clicks a notification whose data contains a project_id.
+// 2. This helper returns  /admin/projects?projectId=42
+// 3. React Router navigates there.
+// 4. ProjectManagement reads ?projectId=42 on mount (after projects load),
+//    finds the matching project in state, and calls:
+//      setSelectedProject(found)
+//      setShowDrawer(true)
+//    Then it removes the param from the URL with { replace: true } so the
+//    back-button works correctly.
+//
+// For non-project notifications the behaviour is unchanged.
+
+export const getNotificationRoute = (notification) => {
+  const type = notification.type
+  const data = notification.data || {}
+
+  // ── Project notifications → open the drawer ──────────────────────────────
+  if (data.project_id) {
+    // Always land on the projects list and let the drawer open from the param.
+    // Avoids a full page reload when the user is already on /admin/projects.
+    return `/admin/projects?projectId=${data.project_id}`
+  }
+
+  // ── Requests ──────────────────────────────────────────────────────────────
+  if (['request_approved', 'request_rejected', 'request_created'].includes(type)) {
+    return data.request_id ? `/admin/requests` : '/admin/requests'
+  }
+
+  // ── Tasks ─────────────────────────────────────────────────────────────────
+  if (type === 'task_assigned') {
+    return data.task_id
+      ? `/admin/tasks?openTaskId=${data.task_id}`
+      : '/admin/tasks'
+  }
+
+  // ── Comments (navigate to the related entity) ─────────────────────────────
+  if (type === 'comment_added') {
+    if (data.project_id) return `/admin/projects?projectId=${data.project_id}`
+    if (data.task_id)    return `/admin/tasks?openTaskId=${data.task_id}`
+    if (data.request_id) return `/admin/requests/${data.request_id}`
+    return '/dashboard'
+  }
+
+  // ── Workload ──────────────────────────────────────────────────────────────
+  if (['workload_updated', 'workload_overloaded'].includes(type)) {
+    return '/admin/workload'
+  }
+
+  return '/dashboard'
+}
+
+// ─── Drop-in replacement for the handleCardClick in NotificationsPage ─────────
+//
+// Usage inside NotificationCard:
+//
+//   import { getNotificationRoute } from '../../utils/notificationRoutes'
+//
+//   const handleCardClick = () => {
+//     navigate(getNotificationRoute(notification))
+//   }
+//
+// The old special-case for task_id (/admin/tasks with state) is kept for tasks.
+// For projects we now use query params instead of router state because:
+//   - Query params survive a hard refresh; router state does not.
+//   - ProjectManagement already has the useSearchParams logic from the previous
+//     refactor, so no extra wiring is needed.

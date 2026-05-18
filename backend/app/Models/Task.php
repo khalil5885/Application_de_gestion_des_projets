@@ -83,7 +83,10 @@ class Task extends Model
             ->orderBy('order');
     }
 
-    
+    public function scopeParents($query)
+    {
+        return $query->whereNull('parent_id');
+    }
 
     public function assignee(): BelongsTo
     {
@@ -161,9 +164,7 @@ class Task extends Model
         }
     }
     public function isMilestone(): bool
-{
-    return $this->parent_id === null;
-    
-}
-
+    {
+        return $this->parent_id === null;
+    }
 }

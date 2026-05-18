@@ -13,6 +13,9 @@ use App\Services\NotificationService;
 use App\Models\Project;
 use App\Models\Task;
 use Illuminate\Http\Request;
+use App\Models\Request as UserRequest;
+use App\Models\User;
+
 
 class TaskController extends Controller
 {
@@ -72,6 +75,58 @@ class TaskController extends Controller
         });
     }
 
+   protected function maybeMarkProjectReadyForReview(Task $task): void
+{
+    $project = $task->project;
+    if (!$project) {
+        return;
+    }
+
+    // If any task isn't 'done', nothing to do
+    $incompleteExists = $project->tasks()->where('status', '!=', 'done')->exists();
+    if ($incompleteExists) {
+        return;
+    }
+
+    // Only update if the project isn't already in a review/completed state
+    if (in_array($project->status, ['ready_for_review', 'in_review', 'done'])) {
+        return;
+    }
+
+    $project->update(['status' => 'ready_for_review']);
+
+    ActivityLog::record(
+        request()->user(),
+        'project_ready_for_review',
+        $project,
+        'All tasks completed – project automatically marked as Ready for Review.'
+    );
+
+    // Notify admins
+    $adminIds = User::where('global_role', 'admin')->pluck('id');
+    if ($adminIds->isNotEmpty()) {
+        NotificationService::sendToAdmins(
+            $adminIds,
+            'project_ready_for_review',
+            [
+                'project_id'   => $project->id,
+                'project_name' => $project->name,
+            ]
+        );
+    }
+
+    // Notify client
+    if ($project->client_id) {
+        NotificationService::sendToClients(
+            [$project->client_id],
+            'project_ready_for_review',
+            [
+                'project_id'   => $project->id,
+                'project_name' => $project->name,
+            ]
+        );
+    }
+}
     public function update(UpdateTaskRequest $request, Task $task, ?Project $project = null)
     {
         return $this->handle(function () use ($request, $task, $project) {
@@ -88,6 +143,11 @@ class TaskController extends Controller
             }
 
             $task->update($validated);
+
+            // If status was just changed to 'done', check project completion
+            if ($task->wasChanged('status') && $task->status === 'done') {
+                $this->maybeMarkProjectReadyForReview($task);
+            }
 
             $this->ensureChildBelongsToParentProject($task->fresh());
 
@@ -155,6 +215,9 @@ class TaskController extends Controller
             abort_unless($task->status === 'ready_for_review', 422, 'Task is not ready for review.');
 
             $task->update(['status' => 'done']);
+
+            // If all tasks in the project are now done, move project to ready_for_review
+            $this->maybeMarkProjectReadyForReview($task);
 
             ActivityLog::record($actor, 'task_approved', $task, 'Task approved and completed.');
             $this->notifyAssignee($task, 'task_approved', 'Task approved.');
@@ -229,32 +292,32 @@ class TaskController extends Controller
         }
     }
     public function finalizeReview(Request $request, Task $task)
-{
-    return $this->handle(function () use ($request, $task) {
-        abort_unless($task->status === 'in_review', 422, 'Task is not under review.');
+    {
+        return $this->handle(function () use ($request, $task) {
+            abort_unless($task->status === 'in_review', 422, 'Task is not under review.');
 
-        $approved = $request->boolean('approved');
+            $approved = $request->boolean('approved');
 
-        $task->update([
-            'status' => $approved ? 'completed' : 'needs_revision',
-            'reviewed_by' => $request->user()->id,
-            'reviewed_at' => now(),
-        ]);
+            $task->update([
+                'status' => $approved ? 'completed' : 'needs_revision',
+                'reviewed_by' => $request->user()->id,
+                'reviewed_at' => now(),
+            ]);
 
-        NotificationService::send([$task->assigned_to], 'task_final_review', [
-            'task_id' => $task->id,
-            'approved' => $approved,
-            'feedback' => $request->input('feedback'),
-        ]);
+            NotificationService::send([$task->assigned_to], 'task_final_review', [
+                'task_id' => $task->id,
+                'approved' => $approved,
+                'feedback' => $request->input('feedback'),
+            ]);
 
-        ActivityLog::record(
-            $request->user(),
-            $approved ? 'task_review_passed' : 'task_review_failed',
-            $task,
-            $approved ? 'Task approved.' : 'Task needs revision.'
-        );
+            ActivityLog::record(
+                $request->user(),
+                $approved ? 'task_review_passed' : 'task_review_failed',
+                $task,
+                $approved ? 'Task approved.' : 'Task needs revision.'
+            );
 
-        return $this->successResponse(TaskResource::make($task), 'Task review finalized.');
-    });
+            return $this->successResponse(TaskResource::make($task), 'Task review finalized.');
+        });
+    }
 }
-}   

@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CBadge, CSpinner, CAlert, CCard, CCardBody, CCol, CProgress, CRow } from '@coreui/react'
+import { CBadge, CSpinner, CAlert, CCard, CCardBody, CCol, CProgress, CRow, CFormTextarea, CButton, CForm } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import {
   cilArrowLeft, cilCalendar, cilUser, cilBriefcase,
   cilFilter, cilGrid, cilList, cilCheckCircle, cilPeople,
-  cilPencil,
+  cilPencil, cilCommentSquare, cilCloudUpload, cilFile, cilTrash,
 } from '@coreui/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../api'
@@ -34,6 +34,14 @@ const formatDate = (dateString) => {
   return new Date(dateString).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric',
   })
+}
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
 }
 
 const STATUS_COLORS = {
@@ -216,18 +224,22 @@ const ProjectDetail = () => {
   const [selectedRole, setSelectedRole] = useState('all')
   const [viewMode, setViewMode] = useState('grid')
 
+  // Comment & file states
+  const [comment, setComment] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [dragActive, setDragActive] = useState(false)
+  const fileInputRef = useRef(null)
+
   const fetchData = async () => {
     try {
-      // ─── FIX 1: Single project endpoint returns { status, message, data: { project object } }
-      // Not a paginated list — no .items here
+      // Project details
       const projectRes = await api.get(`/api/admin/projects/${id}`)
       const projectData = projectRes.data?.data
-      
-      console.log('Project response:', projectRes.data) // Debug
+      console.log('Project response:', projectRes.data)
       setProject(projectData)
 
-      // ─── FIX 2: Fetch project members separately if not loaded with project
-      // Try to get members from project.employees or fetch separately
+      // Members
       let members = []
       if (projectData?.employees && Array.isArray(projectData.employees)) {
         members = projectData.employees
@@ -235,11 +247,10 @@ const ProjectDetail = () => {
         members = projectData.members
       }
 
-      // ─── FIX 3: Fetch tasks from nested route
+      // Tasks
       const tasksRes = await api.get(`/api/admin/projects/${id}/tasks`)
       const tasksArray = tasksRes.data?.data?.items || []
-      
-      console.log('Tasks response:', tasksRes.data) // Debug
+      console.log('Tasks response:', tasksRes.data)
       setTasks(tasksArray)
 
     } catch (err) {
@@ -249,7 +260,7 @@ const ProjectDetail = () => {
       setLoading(false)
     }
   }
-  
+
   useEffect(() => {
     const timer = window.setTimeout(fetchData, 0)
     return () => window.clearTimeout(timer)
@@ -265,34 +276,28 @@ const ProjectDetail = () => {
     const assigned = {}
     const unassigned = { name: 'Unassigned', tasks: [], role: null }
 
-    // ─── FIX 4: Handle different member data structures
-    // Try project.employees first, then project.members
     const members = project.employees || project.members || []
-    
+
     members.forEach(m => {
-      // Handle nested employee object or flat member object
       const employeeId = m.employee_id || m.id || m.user_id
       const userName = m.employee?.name || m.name || m.user?.name || 'Unknown'
       const role = m.role || m.employee?.global_role || 'member'
-      
+
       if (employeeId) {
-        assigned[employeeId] = { 
-          name: userName, 
-          tasks: [], 
-          role: role 
+        assigned[employeeId] = {
+          name: userName,
+          tasks: [],
+          role: role
         }
       }
     })
 
-    // ─── FIX 5: Distribute tasks — handle different assigned_to structures
     tasks.forEach(task => {
-      // Try multiple possible field names for assignee
-      const assigneeId =  task.assigned_to
-      
+      const assigneeId = task.assigned_to
       if (assigneeId && assigned[assigneeId]) {
-        assigned[assigneeId].tasks.push({ 
-          ...task, 
-          assignee_name: assigned[assigneeId].name 
+        assigned[assigneeId].tasks.push({
+          ...task,
+          assignee_name: assigned[assigneeId].name
         })
       } else {
         unassigned.tasks.push(task)
@@ -315,26 +320,24 @@ const ProjectDetail = () => {
   const onDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }
   const onDragLeave = (e) => { e.currentTarget.classList.remove('drag-over') }
   const onDrop = async (e, targetUserId) => {
-  e.preventDefault()
-  e.currentTarget.classList.remove('drag-over')
-  const taskId = e.dataTransfer.getData('taskId')
-  if (!taskId) return
-  
-  try {
-    if (targetUserId === 'unassigned') {
-      // Unassign - no body needed
-      await api.patch(`/api/admin/tasks/${taskId}/unassignEmployee`)
-    } else {
-      // Assign - MUST use 'assigned_to' not 'user_id'
-      await api.patch(`/api/admin/tasks/${taskId}/assignEmployee`, { 
-        assigned_to: parseInt(targetUserId, 10)  // Field name is 'assigned_to'
-      })
+    e.preventDefault()
+    e.currentTarget.classList.remove('drag-over')
+    const taskId = e.dataTransfer.getData('taskId')
+    if (!taskId) return
+
+    try {
+      if (targetUserId === 'unassigned') {
+        await api.patch(`/api/admin/tasks/${taskId}/unassignEmployee`)
+      } else {
+        await api.patch(`/api/admin/tasks/${taskId}/assignEmployee`, {
+          assigned_to: parseInt(targetUserId, 10)
+        })
+      }
+      fetchData()
+    } catch (err) {
+      console.error('Assignment failed:')
     }
-    fetchData()
-  } catch (err) { 
-    console.error('Assignment failed:')
   }
-}
 
   const handleEstimationRecalculated = (data) => {
     setProject((current) => {
@@ -344,8 +347,90 @@ const ProjectDetail = () => {
     })
   }
 
+  // ─── File upload helpers ────────────────────────────────────────────────────
+  const validateFiles = (fileList) => {
+    const valid = []
+    const errors = []
+    for (const file of fileList) {
+      if (file.type.startsWith('video/')) {
+        errors.push(`${file.name} is a video. Videos are not allowed.`)
+        continue
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`${file.name} exceeds 10MB limit.`)
+        continue
+      }
+      valid.push(file)
+    }
+    if (errors.length) {
+      setError(errors.join(' '))
+    }
+    return valid
+  }
+
+  const handleFileSelect = (fileList) => {
+    const newFiles = Array.from(fileList)
+    const validFiles = validateFiles(newFiles)
+    if (validFiles.length) {
+      setSelectedFiles(prev => [...prev, ...validFiles])
+    }
+  }
+
+  const removeFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleDrag = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length) {
+      handleFileSelect(e.dataTransfer.files)
+    }
+  }
+
+  const handlePostComment = async () => {
+    if (!comment.trim() && selectedFiles.length === 0) return
+    setPosting(true)
+    setError(null)
+
+    const formData = new FormData()
+    formData.append('content', comment.trim())
+    selectedFiles.forEach(file => {
+      formData.append('attachments[]', file)
+    })
+
+    try {
+      // Adjust endpoint if your admin comment route is different
+      const response = await api.post(`/api/admin/projects/${id}/comments`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+      const newComment = response.data?.data || response.data
+      setProject(current => ({
+        ...current,
+        comments: [newComment, ...(current?.comments || [])],
+      }))
+      setComment('')
+      setSelectedFiles([])
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to post comment.')
+    } finally {
+      setPosting(false)
+    }
+  }
+
   if (loading) return <div className="text-center py-5"><CSpinner color="primary" /></div>
-  if (error) return <CAlert color="danger">{error}</CAlert>
+  if (error && !project) return <CAlert color="danger">{error}</CAlert>
   if (!project) return null
 
   const completedTasks = tasks.filter(task => task.status === 'done').length
@@ -467,15 +552,121 @@ const ProjectDetail = () => {
         <CCol lg={4}>
           <CCard className="border-0 shadow-sm h-100">
             <CCardBody>
-              <h6 className="fw-bold mb-3">Comments</h6>
+              <div className="d-flex align-items-center gap-2 mb-3">
+                <CIcon icon={cilCommentSquare} className="text-primary" />
+                <h6 className="fw-bold mb-0">Discussion</h6>
+              </div>
+
+              {/* Comment Form with Drag & Drop and File Attachments */}
+              <CForm>
+                {/* Drag & drop zone */}
+                <div
+                  className={`position-relative mb-3 ${dragActive ? 'bg-light border-primary' : ''}`}
+                  onDragEnter={handleDrag}
+                  onDragOver={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDrop={handleDrop}
+                  style={{
+                    border: dragActive ? '2px dashed var(--cui-primary)' : '2px dashed var(--cui-border-color)',
+                    borderRadius: '0.5rem',
+                    transition: 'all 0.2s',
+                  }}
+                >
+                  <CFormTextarea
+                    rows={3}
+                    placeholder="Write a comment... You can also drag & drop files here."
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="border-0"
+                    style={{ background: 'transparent' }}
+                  />
+                  <div className="d-flex justify-content-between align-items-center p-2 border-top">
+                    <div>
+                      <CButton
+                        color="secondary"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current.click()}
+                      >
+                        <CIcon icon={cilCloudUpload} className="me-1" />
+                        Attach files
+                      </CButton>
+                      <input
+                        type="file"
+                        multiple
+                        ref={fileInputRef}
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileSelect(e.target.files)}
+                        accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.zip,.rar"
+                      />
+                    </div>
+                    <CButton
+                      color="primary"
+                      size="sm"
+                      disabled={posting || (!comment.trim() && selectedFiles.length === 0)}
+                      onClick={handlePostComment}
+                    >
+                      {posting ? <CSpinner size="sm" /> : 'Post'}
+                    </CButton>
+                  </div>
+                </div>
+
+                {/* Selected files preview */}
+                {selectedFiles.length > 0 && (
+                  <div className="mb-3">
+                    <div className="small fw-semibold mb-2">Attachments to upload:</div>
+                    <div className="d-flex flex-wrap gap-2">
+                      {selectedFiles.map((file, idx) => (
+                        <div
+                          key={idx}
+                          className="d-flex align-items-center gap-2 bg-body-tertiary rounded-3 p-2"
+                          style={{ fontSize: '0.8rem' }}
+                        >
+                          <CIcon icon={cilFile} />
+                          <span className="text-truncate" style={{ maxWidth: '180px' }}>{file.name}</span>
+                          <span className="text-muted">({formatFileSize(file.size)})</span>
+                          <CButton
+                            color="danger"
+                            variant="ghost"
+                            size="sm"
+                            className="p-0"
+                            onClick={() => removeFile(idx)}
+                          >
+                            <CIcon icon={cilTrash} />
+                          </CButton>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CForm>
+
+              {/* Existing comments with possible attachments */}
               {comments.length === 0 ? (
-                <div className="text-body-secondary small">No comments yet.</div>
+                <div className="text-body-secondary small py-3 text-center">No comments yet.</div>
               ) : (
                 <div className="d-flex flex-column gap-3">
-                  {comments.slice(0, 4).map(comment => (
-                    <div key={comment.id} className="rounded-3 p-3 bg-body-tertiary">
-                      <div className="fw-semibold small">{comment.user?.name || 'Team'}</div>
-                      <div className="small">{comment.content || comment.message}</div>
+                  {comments.slice(0, 10).map((item) => (
+                    <div key={item.id} className="rounded-3 p-3 bg-body-tertiary">
+                      <div className="fw-semibold small">{item.user?.name || 'Team'}</div>
+                      <div className="small mb-2">{item.content || item.message}</div>
+                      {/* Display attachments if present */}
+                      {item.attachments && item.attachments.length > 0 && (
+                        <div className="mt-2 d-flex flex-wrap gap-2">
+                          {item.attachments.map((att, i) => (
+                            <a
+                              key={i}
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="small text-primary d-inline-flex align-items-center gap-1"
+                            >
+                              <CIcon icon={cilFile} size="sm" />
+                              {att.name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

@@ -17,11 +17,26 @@ import {
   CPaginationItem,
   CRow,
   CSpinner,
+  CTable,
+  CTableBody,
+  CTableDataCell,
+  CTableHead,
+  CTableHeaderCell,
+  CTableRow,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilArrowLeft, cilCalendar, cilSearch, cilUser, cilWarning } from '@coreui/icons'
+import { 
+  cilArrowLeft, 
+  cilCalendar, 
+  cilChevronBottom, 
+  cilChevronRight, 
+  cilSearch, 
+  cilUser, 
+  cilWarning,
+  cilList,
+  cilLevelUp,
+} from '@coreui/icons'
 import api from '../../../api'
-import EmployeeTaskTable from '../../../components/workload/EmployeeTaskTable'
 import TaskDetailSidebar from '../../../components/task/TaskDetailSidebar'
 import EmployeePerformanceCard from '../../../components/workload/EmployeePerformanceCard'
 import WorkloadStatsCards from '../../../components/workload/WorkloadStatsCards'
@@ -37,6 +52,302 @@ import {
   normalizeTask,
   WORKLOAD_LEVELS,
 } from '../../../components/workload/workloadUtils'
+
+const PRIORITY_COLORS = {
+  low: 'success',
+  medium: 'warning',
+  high: 'danger',
+  urgent: 'danger',
+}
+
+const STATUS_OPTIONS = {
+  todo: { label: 'To Do', color: '#8a93a2' },
+  in_progress: { label: 'In Progress', color: '#3b82f6' },
+  on_hold: { label: 'On Hold', color: '#f59e0b' },
+  ready_for_review: { label: 'Ready for Review', color: '#0ea5e9' },
+  done: { label: 'Done', color: '#22c55e' },
+}
+
+const formatDate = (d) => {
+  if (!d) return '—'
+  return new Date(d).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  })
+}
+
+// ─── Hierarchical Task Table ──────────────────────────────────────────────────
+
+const HierarchicalTaskTable = ({ tasks, onTaskClick }) => {
+  const [expandedTasks, setExpandedTasks] = useState({})
+  const [childrenCache, setChildrenCache] = useState({})
+  const [loadingChildren, setLoadingChildren] = useState({})
+  const [viewMode, setViewMode] = useState('parents') // 'parents' | 'drilled'
+
+  // Separate parent tasks and subtasks from the initial data
+  const parentTasks = useMemo(() => {
+    return tasks.filter(t => t.parent_id === null || t.parent_id === undefined)
+  }, [tasks])
+
+  const subtasksMap = useMemo(() => {
+    const map = {}
+    tasks.forEach(task => {
+      if (task.parent_id) {
+        if (!map[task.parent_id]) map[task.parent_id] = []
+        map[task.parent_id].push(task)
+      }
+    })
+    return map
+  }, [tasks])
+
+  const fetchChildren = async (parentId) => {
+    if (childrenCache[parentId]) return // Already loaded
+    
+    setLoadingChildren(prev => ({ ...prev, [parentId]: true }))
+    try {
+      const res = await api.get(`/api/admin/tasks/${parentId}`)
+      const taskData = res.data?.data || res.data
+      const children = taskData?.children || []
+      setChildrenCache(prev => ({ ...prev, [parentId]: children }))
+    } catch (err) {
+      console.error('Failed to fetch subtasks:', err)
+      setChildrenCache(prev => ({ ...prev, [parentId]: [] }))
+    } finally {
+      setLoadingChildren(prev => ({ ...prev, [parentId]: false }))
+    }
+  }
+
+  const handleToggleExpand = (taskId) => {
+    setExpandedTasks(prev => {
+      const newState = { ...prev, [taskId]: !prev[taskId] }
+      
+      // Fetch children if expanding
+      if (!prev[taskId]) {
+        fetchChildren(taskId)
+      }
+      
+      return newState
+    })
+  }
+
+  const handleResetView = () => {
+    setViewMode('parents')
+    setExpandedTasks({})
+  }
+
+  // Flatten the visible tasks (parents + expanded children)
+  const visibleTasks = useMemo(() => {
+    if (viewMode !== 'parents') return parentTasks
+    
+    const flat = []
+    parentTasks.forEach(parent => {
+      flat.push({ ...parent, depth: 0, isParent: true })
+      
+      if (expandedTasks[parent.id]) {
+        const children = childrenCache[parent.id] || subtasksMap[parent.id] || []
+        children.forEach(child => {
+          flat.push({ ...child, depth: 1, isChild: true, parentId: parent.id })
+        })
+      }
+    })
+    return flat
+  }, [parentTasks, expandedTasks, childrenCache, subtasksMap, viewMode])
+
+  const getProgressPercent = (task) => {
+    if (task.children?.length) {
+      const done = task.children.filter(c => c.status === 'done').length
+      return Math.round((done / task.children.length) * 100)
+    }
+    return task.status === 'done' ? 100 : task.status === 'in_progress' ? 50 : 0
+  }
+
+  return (
+    <div>
+      {/* View Controls */}
+      <div className="d-flex align-items-center gap-2 mb-3">
+        <CButton
+          color={viewMode === 'parents' ? 'primary' : 'secondary'}
+          variant={viewMode === 'parents' ? 'solid' : 'ghost'}
+          size="sm"
+          onClick={() => {
+            setViewMode('parents')
+            setExpandedTasks({})
+          }}
+        >
+          <CIcon icon={cilList} className="me-1" />
+          Parent Tasks ({parentTasks.length})
+        </CButton>
+        {Object.keys(expandedTasks).length > 0 && (
+          <CButton
+            color="secondary"
+            variant="ghost"
+            size="sm"
+            onClick={handleResetView}
+          >
+            <CIcon icon={cilLevelUp} className="me-1" />
+            Collapse All
+          </CButton>
+        )}
+      </div>
+
+      <CTable hover responsive striped>
+        <CTableHead>
+          <CTableRow>
+            <CTableHeaderCell style={{ width: 50 }}></CTableHeaderCell>
+            <CTableHeaderCell>Title</CTableHeaderCell>
+            <CTableHeaderCell>Project</CTableHeaderCell>
+            <CTableHeaderCell>Status</CTableHeaderCell>
+            <CTableHeaderCell>Priority</CTableHeaderCell>
+            <CTableHeaderCell>Due Date</CTableHeaderCell>
+            <CTableHeaderCell>Progress</CTableHeaderCell>
+            <CTableHeaderCell>Parent / Milestone</CTableHeaderCell>
+            <CTableHeaderCell>Created</CTableHeaderCell>
+          </CTableRow>
+        </CTableHead>
+        <CTableBody>
+          {visibleTasks.map((task) => {
+            const isExpanded = expandedTasks[task.id]
+            const isLoading = loadingChildren[task.id]
+            const hasChildren = task.isParent && (
+              (childrenCache[task.id]?.length > 0) || 
+              (subtasksMap[task.id]?.length > 0) ||
+              (task.children?.length > 0)
+            )
+            const statusCfg = STATUS_OPTIONS[task.status] || STATUS_OPTIONS.todo
+            const progress = getProgressPercent(task)
+            const isOverdue = isOverdueTask(task)
+
+            return (
+              <CTableRow 
+                key={task.id}
+                style={{
+                  cursor: 'pointer',
+                  background: task.isChild ? 'var(--cui-secondary-bg)' : undefined,
+                  borderLeft: task.isChild ? '3px solid var(--cui-primary)' : undefined,
+                }}
+                onClick={() => onTaskClick(task.id)}
+              >
+                <CTableDataCell>
+                  <div className="d-flex align-items-center gap-1">
+                    {task.isParent && (
+                      <button
+                        className="btn btn-sm p-0 border-0"
+                        style={{ background: 'transparent' }}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleToggleExpand(task.id)
+                        }}
+                      >
+                        {isLoading ? (
+                          <CSpinner size="sm" />
+                        ) : (
+                          <CIcon 
+                            icon={isExpanded ? cilChevronBottom : cilChevronRight} 
+                            size="sm"
+                          />
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <div style={{ paddingLeft: task.isChild ? 20 : 0 }}>
+                    <div className="fw-semibold" style={{ fontSize: '0.875rem' }}>
+                      {task.title}
+                    </div>
+                    {task.isParent && hasChildren && (
+                      <small className="text-body-secondary">
+                        {task.children?.length || childrenCache[task.id]?.length || subtasksMap[task.id]?.length || 0} subtask(s)
+                      </small>
+                    )}
+                  </div>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <small>{task.project?.name || '-'}</small>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CBadge
+                    style={{
+                      background: `${statusCfg.color}20`,
+                      color: statusCfg.color,
+                      border: `1px solid ${statusCfg.color}40`,
+                    }}
+                  >
+                    {statusCfg.label}
+                  </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <CBadge color={PRIORITY_COLORS[task.priority] || 'warning'} shape="rounded-pill">
+                    {task.priority || 'medium'}
+                  </CBadge>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <div className="d-flex align-items-center gap-1">
+                    <CIcon 
+                      icon={cilCalendar} 
+                      size="sm" 
+                      style={{ color: isOverdue ? 'var(--cui-danger)' : 'var(--cui-secondary-color)' }} 
+                    />
+                    <small style={{ color: isOverdue ? 'var(--cui-danger)' : undefined }}>
+                      {formatDate(task.due_date)}
+                    </small>
+                    {isOverdue && (
+                      <CBadge color="danger" size="sm">Overdue</CBadge>
+                    )}
+                  </div>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <div className="d-flex align-items-center gap-2">
+                    <div 
+                      className="progress flex-grow-1" 
+                      style={{ height: 6, minWidth: 60 }}
+                    >
+                      <div
+                        className="progress-bar"
+                        role="progressbar"
+                        style={{
+                          width: `${progress}%`,
+                          background: progress === 100 
+                            ? 'var(--cui-success)' 
+                            : progress > 50 
+                              ? 'var(--cui-warning)' 
+                              : 'var(--cui-primary)',
+                        }}
+                      />
+                    </div>
+                    <small className="fw-bold" style={{ minWidth: 35 }}>
+                      {progress}%
+                    </small>
+                  </div>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <small className="text-body-secondary">
+                    {task.parent_id 
+                      ? (tasks.find(t => t.id === task.parent_id)?.title || `Parent #${task.parent_id}`)
+                      : '-'}
+                  </small>
+                </CTableDataCell>
+                <CTableDataCell>
+                  <small>{formatDate(task.created_at)}</small>
+                </CTableDataCell>
+              </CTableRow>
+            )
+          })}
+          {visibleTasks.length === 0 && (
+            <CTableRow>
+              <CTableDataCell colSpan={9} className="text-center py-4 text-body-secondary">
+                No tasks found.
+              </CTableDataCell>
+            </CTableRow>
+          )}
+        </CTableBody>
+      </CTable>
+    </div>
+  )
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const EmployeeWorkloadDetail = ({ user }) => {
   const { employeeId: paramEmployeeId } = useParams()
@@ -77,7 +388,10 @@ const EmployeeWorkloadDetail = ({ user }) => {
       const payload = res.data?.data ?? res.data
       const rawEmployee = payload?.employee ?? payload
       const taskPayload = payload?.tasks?.items ?? payload?.tasks ?? []
-      const normalizedTasks = Array.isArray(taskPayload) ? taskPayload.map(normalizeTask) : []
+      const normalizedTasks = Array.isArray(taskPayload) 
+        ? taskPayload.map(normalizeTask) 
+        : []
+
       const normalizedEmployee = normalizeEmployee({
         ...rawEmployee,
         active_tasks_count: payload?.stats?.active_tasks ?? rawEmployee?.active_tasks_count,
@@ -131,7 +445,11 @@ const EmployeeWorkloadDetail = ({ user }) => {
   }
 
   const handleTaskStatusChange = (taskId, newStatus) => {
-    setTasks((prevTasks) => prevTasks.map((task) => (task.id === taskId ? { ...task, status: newStatus } : task)))
+    setTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, status: newStatus } : task
+      )
+    )
   }
 
   const handleTaskUpdated = () => {
@@ -156,7 +474,8 @@ const EmployeeWorkloadDetail = ({ user }) => {
     )
 
   const level = WORKLOAD_LEVELS[employee.workloadLevel] || WORKLOAD_LEVELS.low
-  const upcomingDeadlines = tasks
+  const parentTasks = tasks.filter(t => t.parent_id === null || t.parent_id === undefined)
+  const upcomingDeadlines = parentTasks
     .filter((task) => task.due_date && task.status !== 'done')
     .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
     .slice(0, 4)
@@ -342,11 +661,16 @@ const EmployeeWorkloadDetail = ({ user }) => {
       <div className="d-flex align-items-center justify-content-between mb-3">
         <h5 className="mb-0">Assigned Tasks</h5>
         <span className="small text-body-secondary">
-          {loading ? 'Refreshing...' : `${tasks.length} task${tasks.length === 1 ? '' : 's'} shown`}
+          {loading ? 'Refreshing...' : `${parentTasks.length} parent task${parentTasks.length === 1 ? '' : 's'}`}
           {pagination?.total != null ? ` of ${pagination.total}` : ''}
         </span>
       </div>
-      <EmployeeTaskTable tasks={tasks} onTaskClick={handleTaskClick} />
+      
+      <HierarchicalTaskTable 
+        tasks={tasks} 
+        onTaskClick={handleTaskClick} 
+      />
+      
       <TaskDetailSidebar
         taskId={selectedTaskId}
         visible={sidebarVisible}

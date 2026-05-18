@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useLocation } from 'react-router-dom' 
 import {
   CCard,
   CCardBody,
@@ -90,6 +91,7 @@ function useDebounce(value, delay) {
 // ─── MAIN COMPONENT ──────────────────────────────────────────────
 const TasksOverview = () => {
   // ── State ─────────────────────────────────────────────────────
+  
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [projects, setProjects] = useState([])
@@ -107,6 +109,7 @@ const TasksOverview = () => {
   })
 
   // ── Task Detail Sidebar State ─────────────────────────────────
+  const location = useLocation()
   const [selectedTaskId, setSelectedTaskId] = useState(null)
   const [sidebarVisible, setSidebarVisible] = useState(false)
 
@@ -131,6 +134,12 @@ const TasksOverview = () => {
   // ── Fetch Users (once on mount) ─────────────────────────────
   useEffect(() => {
     const fetchUsers = async () => {
+      if (location.state?.openTaskId) {
+      setSelectedTaskId(location.state.openTaskId)
+      setSidebarVisible(true)
+      window.history.replaceState({}, document.title)
+    }
+  
       try {
         const res = await api.get('/api/admin/users')
         if (res.data?.status === 'success') {
@@ -141,7 +150,7 @@ const TasksOverview = () => {
       }
     }
     fetchUsers()
-  }, [])
+  }, [location], [])
 
   // ── Fetch Projects (once on mount) ──────────────────────────
   useEffect(() => {

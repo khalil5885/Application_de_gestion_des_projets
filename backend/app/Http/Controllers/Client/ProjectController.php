@@ -35,19 +35,19 @@ class ProjectController extends Controller
         });
     }
 
-    public function addComment(StoreCommentRequest $request, Project $project)
-    {
-        return $this->handle(function () use ($request, $project) {
-            abort_unless($project->client_id === $request->user()->id, 403, 'You are not allowed to comment on this project.');
+    // public function addComment(StoreCommentRequest $request, Project $project)
+    // {
+    //     return $this->handle(function () use ($request, $project) {
+    //         abort_unless($project->client_id === $request->user()->id, 403, 'You are not allowed to comment on this project.');
 
-            $comment = $project->comments()->create([
-                'user_id' => $request->user()->id,
-                'content' => $request->validated('content'),
-            ]);
+    //         $comment = $project->comments()->create([
+    //             'user_id' => $request->user()->id,
+    //             'content' => $request->validated('content'),
+    //         ]);
 
-            ActivityLog::record($request->user(), 'project_comment_created', $project, 'Client added a project comment.');
+    //         ActivityLog::record($request->user(), 'project_comment_created', $project, 'Client added a project comment.');
 
-            return $this->successResponse(CommentResource::make($comment->load('user')), 'Project comment added successfully.', 201);
-        });
-    }
+    //         return $this->successResponse(CommentResource::make($comment->load('user')), 'Project comment added successfully.', 201);
+    //     });
+    // }
 }

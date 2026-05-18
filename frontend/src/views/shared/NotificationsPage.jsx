@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CAlert,
   CBadge,
@@ -80,7 +81,8 @@ const renderData = (data = {}) => {
   return rows.slice(0, 4)
 }
 
-const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
+// ─── NotificationCard (simplified) ──────────────────────────────────────────
+const NotificationCard = ({ notification, onMarkRead, onDelete, onClick }) => {
   const data = notification.data || {}
   const meta = typeMeta[notification.type] || {
     label: notification.type ? prettifyKey(notification.type) : 'Notification',
@@ -90,8 +92,30 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
   const details = renderData(data)
   const feedback = data.feedback || data.reason
 
+  const handleMarkRead = (e) => {
+    e.stopPropagation()
+    onMarkRead?.(notification.id)
+  }
+
+  const handleDelete = (e) => {
+    e.stopPropagation()
+    onDelete?.(notification.id)
+  }
+
   return (
-    <CCard className={`shadow-sm ${isUnread ? 'border-start border-primary border-4' : ''}`}>
+    <CCard
+      className={`shadow-sm ${isUnread ? 'border-start border-primary border-4' : ''}`}
+      style={{ cursor: 'pointer', transition: 'transform 0.1s ease, box-shadow 0.1s ease' }}
+      onClick={onClick}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-1px)'
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)'
+        e.currentTarget.style.boxShadow = ''
+      }}
+    >
       <CCardBody>
         <div className="d-flex justify-content-between align-items-start gap-3">
           <div className="d-flex gap-3 flex-grow-1">
@@ -126,7 +150,7 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
                 size="sm"
                 variant="outline"
                 title="Mark as read"
-                onClick={() => onMarkRead(notification.id)}
+                onClick={handleMarkRead}
               >
                 <CIcon icon={cilCheckAlt} />
               </CButton>
@@ -136,7 +160,7 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
               size="sm"
               variant="outline"
               title="Delete"
-              onClick={() => onDelete(notification.id)}
+              onClick={handleDelete}
             >
               <CIcon icon={cilTrash} />
             </CButton>
@@ -147,10 +171,12 @@ const NotificationCard = ({ notification, onMarkRead, onDelete }) => {
   )
 }
 
+// ─── NotificationsPage ──────────────────────────────────────────────────────
 const NotificationsPage = () => {
   const { user } = useAuth()
   const { refreshCounts } = useNotifications()
   const role = user?.global_role || user?.role
+  const navigate = useNavigate()
   const [notifications, setNotifications] = useState([])
   const [typeFilter, setTypeFilter] = useState('all')
   const [loading, setLoading] = useState(true)
@@ -206,6 +232,57 @@ const NotificationsPage = () => {
     refreshCounts()
   }
 
+  // ── Role‑based navigation handler ─────────────────────────────────────────
+  const handleNotificationClick = (notification) => {
+    const data = notification.data || {}
+
+    switch (role) {
+      case 'admin':
+        navigate(getAdminRoute(notification))
+        break
+      case 'employee':
+        navigate(getEmployeeRoute(notification))
+        break
+      case 'client':
+        navigate(getClientRoute(notification))
+        break
+      default:
+        navigate('/')
+    }
+  }
+
+  const getAdminRoute = (notif) => {
+    const data = notif.data || {}
+    if (data.project_id) return `/admin/projects?projectId=${data.project_id}`
+    if (['request_approved', 'request_rejected', 'request_created'].includes(notif.type))
+      return '/admin/requests'
+    if (notif.type === 'task_assigned')
+      return data.task_id ? `/admin/tasks?openTaskId=${data.task_id}` : '/admin/tasks'
+    if (notif.type === 'comment_added') {
+      if (data.project_id) return `/admin/projects?projectId=${data.project_id}`
+      if (data.task_id) return `/admin/tasks?openTaskId=${data.task_id}`
+      if (data.request_id) return '/admin/requests'
+      return '/dashboard'
+    }
+    if (['workload_updated', 'workload_overloaded'].includes(notif.type))
+      return '/admin/workload'
+    return '/dashboard'
+  }
+
+  const getEmployeeRoute = (notif) => {
+    if (notif.data?.task_id) {
+      return `/employee/tasks?taskId=${notif.data.task_id}`
+    }
+    return '/employee/tasks'
+  }
+
+  const getClientRoute = (notif) => {
+    if (notif.data?.project_id) {
+      return `/client/projects/${notif.data.project_id}`
+    }
+    return '/client/projects'
+  }
+
   return (
     <div className="pb-4">
       <div className="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
@@ -259,6 +336,7 @@ const NotificationsPage = () => {
               notification={notification}
               onMarkRead={markRead}
               onDelete={deleteNotification}
+              onClick={() => handleNotificationClick(notification)}
             />
           ))}
         </div>

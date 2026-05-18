@@ -42,7 +42,10 @@ class UserController extends Controller
 
         // ✅ Build setup URL properly
         $setupUrl = $setupToken 
-            ? config('app.frontend_url', 'http://localhost:3000') . '/setup-account?token=' . $setupToken
+            ? rtrim(config('app.frontend_url', 'http://localhost:3000'), '/') . '/#/setup-password?' . http_build_query([
+                'token' => $setupToken,
+                'email' => $user->email,
+            ])
             : null;
 
         // ✅ Send email

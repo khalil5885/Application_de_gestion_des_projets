@@ -8,6 +8,7 @@ import TaskFilters from './TaskFilters'
 import TaskCard from './TaskCard'
 import TaskDetailModal from './TaskDetailModal'
 import { formatDueDate } from './utils/taskHelpers'
+import api from '../../../api'
 
 const EmployeeTaskDashboard = () => {
   const [filters, setFilters] = useState({ search: '', status: 'all', priority: 'all' })
@@ -19,28 +20,17 @@ const EmployeeTaskDashboard = () => {
 
   // Recursive helper to update task status at any nesting level
   const updateTaskInTree = useCallback((taskList, taskId, newStatus) => {
-  return taskList.map(task => {
-    // If this is the target task, update ONLY its status
-    if (task.id === taskId) {
-      return { ...task, status: newStatus }
-    }
-    
-    // If this task has children, recurse but DON'T change parent status
-    if (task.children?.length > 0) {
-      const updatedChildren = updateTaskInTree(task.children, taskId, newStatus)
-      
-      // Only update children array, NEVER touch parent status/progress
-      // Progress is calculated from children via calculateProgress() in UI
-      return { 
-        ...task, 
-        children: updatedChildren 
-        // DO NOT add: status: something, progress: something
+    return taskList.map(task => {
+      if (task.id === taskId) {
+        return { ...task, status: newStatus }
       }
-    }
-    
-    return task
-  })
-}, [])
+      if (task.children?.length > 0) {
+        const updatedChildren = updateTaskInTree(task.children, taskId, newStatus)
+        return { ...task, children: updatedChildren }
+      }
+      return task
+    })
+  }, [])
 
   // Client-side filtering — only parent tasks
   const filteredTasks = useMemo(() => {
@@ -57,7 +47,6 @@ const EmployeeTaskDashboard = () => {
       })
   }, [tasks, filters])
 
-  // Stats
   const stats = useMemo(() => {
     const allTasks = tasks
     const overdue = allTasks.filter(t => {
@@ -77,6 +66,26 @@ const EmployeeTaskDashboard = () => {
       refetch()
     }
   }, [setTasks, updateTaskInTree, updateStatus, refetch])
+
+  // NEW: Handle mark ready for review
+  const handleMarkReady = useCallback(async (task) => {
+  try {
+    const response = await api.patch(`/api/employee/tasks/${task.id}/mark-ready`)
+    const updatedTask = response.data?.data
+
+    // Update local state
+    setTasks(prev => updateTaskInTree(prev, task.id, 'ready_for_review'))
+
+    // Refresh to get server state
+    setTimeout(() => refetch(), 500)
+
+    return updatedTask
+  } catch (error) {
+    console.error('Failed to mark ready:', error)
+    alert(error.response?.data?.message || 'Failed to submit for review')
+  }
+}, [setTasks, updateTaskInTree, refetch])
+
 
   const handleTaskClick = useCallback((task) => {
     setSelectedTask(task)
@@ -171,6 +180,7 @@ const EmployeeTaskDashboard = () => {
               key={task.id}
               task={task}
               onStatusChange={handleStatusChange}
+              onMarkReady={handleMarkReady}
               onClick={handleTaskClick}
             />
           ))}
@@ -183,6 +193,7 @@ const EmployeeTaskDashboard = () => {
         task={selectedTask}
         onClose={() => setShowModal(false)}
         onStatusChange={handleStatusChange}
+        onMarkReady={handleMarkReady}
         onTaskUpdated={handleTaskUpdated}
       />
     </div>

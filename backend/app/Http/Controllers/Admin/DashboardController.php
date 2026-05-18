@@ -45,7 +45,7 @@ class DashboardController extends Controller
 
             return $this->successResponse([
                 'stats' => [
-                    'active_projects'    => Project::where('status', 'active')->count(),
+                    'active_projects'    => Project::where('status', 'in_progress')->count(),
                     'new_projects_month' => Project::where('created_at', '>=', now()->startOfMonth())->count(),
                     'completed_tasks'    => Task::where('status', 'done')->count(),
                     'new_tasks_week'     => Task::where('status', 'done')

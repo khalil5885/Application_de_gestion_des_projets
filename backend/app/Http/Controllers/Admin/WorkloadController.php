@@ -87,8 +87,9 @@ class WorkloadController extends Controller
 
             $statsUser->workload_level = $this->calculateWorkloadLevel((int) $statsUser->active_tasks_count);
 
-            $tasksQuery = $user->assignedTasks()
-                ->with(['project', 'parent', 'assignee'])
+           $tasksQuery = $user->assignedTasks()
+    ->parents()  // whereNull('parent_id')
+    ->with(['project', 'children.assignee', 'assignee'])
                 ->when($request->filled('status'), fn(Builder $query) => $query->where('status', (string) $request->string('status')))
                 ->when($request->filled('priority'), fn(Builder $query) => $query->where('priority', (string) $request->string('priority')))
                 ->when($request->boolean('overdue'), fn(Builder $query) => $query
