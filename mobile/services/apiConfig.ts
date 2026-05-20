@@ -1,7 +1,7 @@
 import { Platform } from 'react-native';
 import { storage } from './storage';
 
-const DEVICE_IP = '192.168.1.120';
+const DEVICE_IP = '192.168.1.133';
 const API_BASE_URL_KEY = 'pm_api_base_url';
 
 export async function getApiBaseUrl(): Promise<string> {

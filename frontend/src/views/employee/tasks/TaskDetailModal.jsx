@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
 import {
   CAlert,
   CModal,
@@ -21,13 +21,20 @@ import {
   cilX,
   cilArrowLeft,
   cilTask,
+  cilCloudUpload,
+  cilFile,
+  cilTrash,
+  cilImage,
+  cilSpreadsheet,
+  cilDescription,
+  cilDataTransferDown,
 } from '@coreui/icons'
 import ProgressBar from './ProgressBar'
 import RecursiveSubtaskTree from './RecursiveSubtaskTree'
 import { formatDueDate, calculateProgress } from './utils/taskHelpers'
 import RequestExtensionForm from '../../../components/request/RequestExtensionForm'
 import api from '../../../api'
-import PriorityDot from './PriorityDot' // needed for warning modal list
+import PriorityDot from './PriorityDot'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,6 +63,27 @@ const formatDate = (d) => {
 }
 
 const isOverdue = (d, status) => d && status !== 'done' && new Date(d) < new Date()
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+}
+
+// ─── File Type Helpers ───────────────────────────────────────────────────────
+
+const getFileIcon = (mimeType) => {
+  if (mimeType?.startsWith('image/')) return cilImage
+  if (mimeType?.includes('pdf')) return cilDescription
+  if (mimeType?.includes('spreadsheet') || mimeType?.includes('excel') || mimeType?.includes('csv')) return cilSpreadsheet
+  if (mimeType?.includes('word') || mimeType?.includes('document')) return cilDescription
+  if (mimeType?.includes('zip') || mimeType?.includes('rar') || mimeType?.includes('archive')) return cilFile
+  return cilFile
+}
+
+const isImageFile = (mimeType) => mimeType?.startsWith('image/')
 
 // ─── Fetch the full ancestor chain using parent_id ────────────────────────────
 const fetchAncestorChain = async (task) => {
@@ -170,6 +198,84 @@ const ParentTaskCard = ({ parent, onNavigate }) => {
   )
 }
 
+// ─── Attachment Item Component ──────────────────────────────────────────────
+
+const AttachmentItem = ({ attachment }) => {
+  const icon = getFileIcon(attachment.mime_type)
+  const isImage = isImageFile(attachment.mime_type)
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      {isImage ? (
+        <a
+          href={attachment.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-decoration-none"
+          title={attachment.file_name}
+        >
+          <img
+            src={attachment.url}
+            alt={attachment.file_name}
+            style={{
+              maxWidth: '140px',
+              maxHeight: '100px',
+              objectFit: 'cover',
+              borderRadius: 8,
+              border: '1px solid var(--cui-border-color)',
+              cursor: 'pointer',
+            }}
+          />
+        </a>
+      ) : (
+        <a
+          href={attachment.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={attachment.file_name}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 12px',
+            borderRadius: 8,
+            background: 'var(--cui-body-bg)',
+            border: '1px solid var(--cui-border-color)',
+            textDecoration: 'none',
+            color: 'var(--cui-body-color)',
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+            transition: 'background 0.15s, border-color 0.15s',
+            maxWidth: '200px',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'var(--cui-secondary-bg)'
+            e.currentTarget.style.borderColor = 'var(--cui-primary)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'var(--cui-body-bg)'
+            e.currentTarget.style.borderColor = 'var(--cui-border-color)'
+          }}
+        >
+          <CIcon icon={icon} size="sm" style={{ color: 'var(--cui-primary)', flexShrink: 0 }} />
+          <span style={{
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            maxWidth: '120px',
+          }}>
+            {attachment.file_name}
+          </span>
+          <CIcon icon={cilDataTransferDown} size="sm" style={{ color: 'var(--cui-secondary-color)', flexShrink: 0 }} />
+        </a>
+      )}
+      <span style={{ fontSize: '0.7rem', color: 'var(--cui-secondary-color)' }}>
+        {formatFileSize(attachment.file_size)}
+      </span>
+    </div>
+  )
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, onTaskUpdated }) => {
@@ -188,6 +294,12 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
   const [selectedSubtask, setSelectedSubtask] = useState(null)
   const [subtaskModalVisible, setSubtaskModalVisible] = useState(false)
 
+  // File upload states
+  const [selectedFiles, setSelectedFiles] = useState([])
+  const [dragActive, setDragActive] = useState(false)
+  const [postingComment, setPostingComment] = useState(false)
+  const fileInputRef = useRef(null)
+
   // Incomplete subtask warning modal state
   const [incompleteWarning, setIncompleteWarning] = useState({
     show: false,
@@ -202,6 +314,8 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
     setLocalTask(task)
     setActionFeedback(null)
     setAncestors([])
+    setSelectedFiles([])
+    setComment('')
 
     if (!task?.parent_id) return
 
@@ -234,7 +348,6 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
 
   // ── Wrapper for status changes with incomplete subtasks check ──────────────
   const handleStatusChange = async (taskId, newStatus) => {
-    // Only check when changing to 'done' and task has children
     if (newStatus === 'done') {
       const taskToUpdate = findTaskById(taskId)
       if (taskToUpdate && taskToUpdate.children?.length > 0) {
@@ -246,11 +359,10 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
             taskTitle: taskToUpdate.title,
             incompleteSubtasks: incomplete,
           })
-          return // Stop – show warning instead
+          return
         }
       }
     }
-    // No warning needed – proceed
     onStatusChange?.(taskId, newStatus)
   }
 
@@ -260,11 +372,9 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
     setMarkingAllDone(true)
     setIncompleteWarning(prev => ({ ...prev, show: false }))
     try {
-      // Mark each incomplete subtask as done (this will recursively handle their children)
       for (const subtask of incompleteSubtasks) {
         await onStatusChange?.(subtask.id, 'done')
       }
-      // Finally mark the parent task as done
       await onStatusChange?.(taskId, 'done')
       onTaskUpdated?.()
       setActionFeedback({ type: 'success', message: 'All subtasks and parent task marked as done.' })
@@ -276,23 +386,94 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
     }
   }
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
+  // ── File Upload Helpers ──────────────────────────────────────────────────
+  const validateFiles = (fileList) => {
+    const valid = []
+    const errors = []
+    for (const file of fileList) {
+      if (file.type.startsWith('video/')) {
+        errors.push(`${file.name} is a video. Videos are not allowed.`)
+        continue
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        errors.push(`${file.name} exceeds 10MB limit.`)
+        continue
+      }
+      valid.push(file)
+    }
+    if (errors.length) {
+      setActionFeedback({ type: 'danger', message: errors.join(' ') })
+      setTimeout(() => setActionFeedback(null), 5000)
+    }
+    return valid
+  }
 
+  const handleFileSelect = (fileList) => {
+    const newFiles = Array.from(fileList)
+    const validFiles = validateFiles(newFiles)
+    if (validFiles.length) {
+      setSelectedFiles(prev => [...prev, ...validFiles])
+    }
+  }
+
+  const removeFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleDrag = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (e.type === 'dragenter' || e.type === 'dragover') {
+      setDragActive(true)
+    } else if (e.type === 'dragleave') {
+      setDragActive(false)
+    }
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDragActive(false)
+    if (e.dataTransfer.files && e.dataTransfer.files.length) {
+      handleFileSelect(e.dataTransfer.files)
+    }
+  }
+
+  // ── Comment Handlers ─────────────────────────────────────────────────────
   const handleAddComment = async () => {
-    if (!comment.trim()) return
+    if (!comment.trim() && selectedFiles.length === 0) return
+
+    setPostingComment(true)
+    setActionFeedback(null)
+
+    const formData = new FormData()
+    formData.append('content', comment.trim() || ' ')
+    if (selectedFiles.length > 0) {
+      selectedFiles.forEach(file => {
+        formData.append('attachments[]', file)
+      })
+    }
+
     try {
-      const res = await api.post(`/api/employee/tasks/${localTask.id}/comments`, { content: comment.trim() })
+      const res = await api.post(`/api/employee/tasks/${localTask.id}/comments`, formData)
       const newComment = res.data?.data || res.data
       const safe = newComment?.user ? newComment : { ...newComment, user: { name: 'You' } }
       setLocalTask(prev => ({ ...prev, comments: [...(prev.comments || []), safe] }))
       setComment('')
+      setSelectedFiles([])
     } catch (err) {
-      setActionFeedback({ type: 'danger', message: err.response?.data?.message || 'Failed to add comment.' })
+      console.error('Comment error:', err)
+      setActionFeedback({
+        type: 'danger',
+        message: err.response?.data?.message || err.response?.data?.error || 'Failed to add comment.'
+      })
+      setTimeout(() => setActionFeedback(null), 5000)
+    } finally {
+      setPostingComment(false)
     }
   }
 
   const handleSubtaskStatusChange = async (subtaskId, newStatus) => {
-    // Optimistic local update
     setLocalTask(prev => ({
       ...prev,
       children: updateSubtaskStatusInTree(prev.children || [], subtaskId, newStatus),
@@ -301,10 +482,8 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
       setSelectedSubtask(prev => ({ ...prev, status: newStatus }))
     }
 
-    // If changing to 'in_progress', update all ancestors recursively (unless already done/in_progress/ready_for_review)
     if (newStatus === 'in_progress') {
       try {
-        // Get the subtask object (either from local state or fetch)
         let subtask = findSubtaskInTree(localTask.children || [], subtaskId)
         if (!subtask && selectedSubtask?.id === subtaskId) subtask = selectedSubtask
         if (!subtask) {
@@ -320,7 +499,6 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
           await api.patch(`/api/employee/tasks/${ancestor.id}`, { status: 'in_progress' })
         }
 
-        // Notify parent component (e.g., parent modal or task list) that data has changed
         onTaskUpdated?.()
         setActionFeedback({ type: 'success', message: 'Parent tasks updated to In Progress.' })
         setTimeout(() => setActionFeedback(null), 3000)
@@ -333,7 +511,6 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
       }
     }
 
-    // Persist the subtask's own status change (using the outer onStatusChange)
     onStatusChange?.(subtaskId, newStatus)
   }
 
@@ -526,6 +703,7 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
             <RequestExtensionForm compact requestableId={localTask.id} requestableType="task" currentDeadline={localTask.due_date} />
           </div>
 
+          {/* ─── COMMENTS SECTION WITH ATTACHMENTS ─────────────────────────── */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
               <CIcon icon={cilCommentSquare} size="sm" style={{ color: 'var(--cui-primary)' }} />
@@ -537,6 +715,7 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
               </span>
             </div>
 
+            {/* Comments List */}
             <div className="d-flex flex-column gap-2 mb-3">
               {!localTask.comments?.length && (
                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--cui-secondary-color)', fontSize: '0.85rem' }}>
@@ -560,20 +739,124 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
                   <div style={{ fontSize: '0.85rem', color: 'var(--cui-secondary-color)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                     {c.content || c.body || ''}
                   </div>
+
+                  {/* ✅ ATTACHMENTS — clickable with file type icons */}
+                  {c.attachments && c.attachments.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <div style={{
+                        fontSize: '0.65rem',
+                        color: 'var(--cui-secondary-color)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.06em',
+                        fontWeight: 700,
+                        marginBottom: 8,
+                      }}>
+                        Attachments
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                        {c.attachments.map((att, i) => (
+                          <AttachmentItem key={i} attachment={att} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
 
-            <div className="d-flex gap-2">
+            {/* Comment Input with File Upload */}
+            <div
+              style={{
+                border: dragActive ? '2px dashed var(--cui-primary)' : '1px solid var(--cui-border-color)',
+                borderRadius: 8,
+                padding: '8px',
+                background: dragActive ? 'rgba(59,130,246,0.05)' : 'var(--cui-body-bg)',
+                transition: 'all 0.2s',
+              }}
+              onDragEnter={handleDrag}
+              onDragOver={handleDrag}
+              onDragLeave={handleDrag}
+              onDrop={handleDrop}
+            >
               <CFormTextarea
-                placeholder="Write a comment..."
+                placeholder="Write a comment... Drag & drop files here or use the attach button."
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 rows={2}
-                className="shadow-none"
-                style={{ fontSize: '0.85rem', background: 'var(--cui-secondary-bg)' }}
+                className="shadow-none border-0"
+                style={{ fontSize: '0.85rem', background: 'transparent', resize: 'none' }}
               />
-              <CButton color="primary" onClick={handleAddComment} disabled={!comment.trim()}>Post</CButton>
+
+              {/* Selected files preview */}
+              {selectedFiles.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, marginBottom: 8 }}>
+                  {selectedFiles.map((file, idx) => (
+                    <div
+                      key={idx}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 10px',
+                        borderRadius: 6,
+                        background: 'var(--cui-secondary-bg)',
+                        border: '1px solid var(--cui-border-color)',
+                        fontSize: '0.75rem',
+                      }}
+                    >
+                      <CIcon icon={getFileIcon(file.type)} size="sm" />
+                      <span style={{ maxWidth: '120px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {file.name}
+                      </span>
+                      <span style={{ color: 'var(--cui-secondary-color)' }}>({formatFileSize(file.size)})</span>
+                      <button
+                        onClick={() => removeFile(idx)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                          cursor: 'pointer',
+                          color: '#ef4444',
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <CIcon icon={cilTrash} size="sm" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                <div>
+                  <CButton
+                    color="secondary"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <CIcon icon={cilCloudUpload} className="me-1" />
+                    Attach
+                  </CButton>
+                  <input
+                    type="file"
+                    multiple
+                    ref={fileInputRef}
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                    accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,.zip,.rar"
+                  />
+                </div>
+                <CButton
+                  color="primary"
+                  size="sm"
+                  disabled={postingComment || (!comment.trim() && selectedFiles.length === 0)}
+                  onClick={handleAddComment}
+                >
+                  {postingComment ? <CSpinner size="sm" /> : 'Post'}
+                </CButton>
+              </div>
             </div>
           </div>
         </CModalBody>
@@ -608,7 +891,6 @@ const TaskDetailModal = ({ visible, task, onClose, onStatusChange, onMarkReady, 
             <CBadge color="success" className="py-2 px-3">Completed</CBadge>
           )}
 
-          {/* Mark as Done button for main task that has children and is not done yet */}
           {!isSubtask && localTask.children?.length > 0 && localTask.status !== 'done' && (
             <CButton color="success" onClick={() => handleStatusChange(localTask.id, 'done')}>
               <CIcon icon={cilCheck} size="sm" className="me-1" /> Mark as Done

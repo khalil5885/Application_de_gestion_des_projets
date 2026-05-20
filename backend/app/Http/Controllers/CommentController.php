@@ -55,42 +55,46 @@ class CommentController extends Controller
     /**
      * Create comment on TASK
      */
-    public function storeOnTask(Request $request, Task $task)
-    {
-        $data = $request->validate([
-            'content' => 'required|string',
-            'visibility' => 'nullable|in:public,internal,private'
-        ]);
+    /**
+ * Create comment on TASK
+ */
+public function storeOnTask(Request $request, Task $task)
+{
+    $data = $request->validate([
+        'content' => 'required|string',
+        'attachments.*' => 'file|max:10240|mimes:jpg,jpeg,png,gif,pdf,doc,docx,txt,zip,rar',
+        'visibility' => 'nullable|in:public,internal,private'
+    ]);
 
-        $this->authorizeTaskAccess($task);
+    $this->authorizeTaskAccess($task);
 
-        $comment = $task->comments()->create([
-            'user_id'    => Auth::id(),
-            'content'       => $data['content'],
-            'visibility' => $data['visibility'] ?? 'internal',
-        ]);
-        if ($request->hasFile('attachments')) {
+    $comment = $task->comments()->create([
+        'user_id'    => Auth::id(),
+        'content'       => $data['content'],
+        'visibility' => $data['visibility'] ?? 'internal',
+    ]);
+
+    // ✅ ADD THIS FILE HANDLING (same as storeOnProject)
+    if ($request->hasFile('attachments')) {
         foreach ($request->file('attachments') as $file) {
-            // Store file in public disk, under "comments/{comment_id}"
             $path = $file->store("comments/{$comment->id}", 'public');
-
             $comment->attachments()->create([
                 'file_path' => $path,
                 'file_name' => $file->getClientOriginalName(),
-                'mime_type' => $file->getMimeType(),
+                'mime_type' => $file->getClientMimeType(),
                 'file_size' => $file->getSize(),
             ]);
         }
     }
-    
 
-        $this->notifyTaskComment($task, $comment);
+    $comment->load('attachments', 'user');
+    $this->notifyTaskComment($task, $comment);
 
-        return response()->json(
-            $comment->load('user'),
-            201
-        );
-    }
+    return response()->json(
+        $comment->load('user'),
+        201
+    );
+}
 
     /**
      * Delete comment

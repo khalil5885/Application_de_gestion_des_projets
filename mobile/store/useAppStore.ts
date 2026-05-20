@@ -12,8 +12,8 @@ import {
   clientApi,
   employeeApi,
   notificationApi,
-  onServerError,
   onUnauthorized,
+  onServerError,
   setAuthToken,
   verifyBackendReachable,
 } from '../services/api';
@@ -93,10 +93,10 @@ interface AppStore {
 
   projects: Project[];
   fetchProjects: () => Promise<void>;
-  fetchProject: (id: number) => Promise<Project | null>;
-  addProject: (project: Partial<Project> & Record<string, unknown>) => Promise<void>;
+  fetchProject: (id: number) => Promise<<Project | null>;
+  addProject: (project: Partial<<Project> & Record<string, unknown>) => Promise<void>;
   updateProjectStatus: (id: number, status: ProjectStatus) => Promise<void>;
-  updateProject: (id: number, data: Partial<Project> & Record<string, unknown>) => Promise<void>;
+  updateProject: (id: number, data: Partial<<Project> & Record<string, unknown>) => Promise<void>;
   deleteProject: (id: number) => Promise<void>;
 
   tasks: Task[];
@@ -121,7 +121,7 @@ interface AppStore {
 
   requests: Request[];
   fetchRequests: () => Promise<void>;
-  addRequest: (request: Partial<Request> & { type: RequestType; title: string; description?: string; project?: Project }) => Promise<void>;
+  addRequest: (request: Partial<<Request> & { type: RequestType; title: string; description?: string; project?: Project }) => Promise<void>;
   approveRequest: (id: number) => Promise<void>;
   rejectRequest: (id: number) => Promise<void>;
 
@@ -375,7 +375,7 @@ function taskPayload(task: Partial<Task> & Record<string, unknown>) {
   };
 }
 
-function projectPayload(project: Partial<Project> & Record<string, unknown>) {
+function projectPayload(project: Partial<<Project> & Record<string, unknown>) {
   return {
     name: project.name,
     description: project.description,
@@ -389,7 +389,7 @@ function projectPayload(project: Partial<Project> & Record<string, unknown>) {
 }
 
 async function withStoreError<T>(
-  set: (partial: Partial<AppStore> | ((state: AppStore) => Partial<AppStore>)) => void,
+  set: (partial: Partial<<AppStore> | ((state: AppStore) => Partial<<AppStore>)) => void,
   get: () => AppStore,
   key: string,
   fn: () => Promise<T>
@@ -408,7 +408,7 @@ async function withStoreError<T>(
   }
 }
 
-export const useAppStore = create<AppStore>()(
+export const useAppStore = create<<AppStore>()(
   persist(
     (set, get) => ({
       isDarkMode: true,
@@ -465,12 +465,14 @@ export const useAppStore = create<AppStore>()(
             const response = await authApi.login(email, password);
             if (!response.token) throw new Error('Login succeeded but no auth token was returned.');
 
+            // CRITICAL FIX: Set token BEFORE any API call that needs it
             setAuthToken(response.token);
             await appStorage.setItem(TOKEN_KEY, response.token);
 
             try {
               return normalizeUser(await authApi.me());
             } catch (error) {
+              // Rollback on failure
               await appStorage.removeItem(TOKEN_KEY);
               setAuthToken(null);
               throw error;
@@ -494,6 +496,7 @@ export const useAppStore = create<AppStore>()(
             return;
           }
 
+          // CRITICAL FIX: Set token BEFORE authApi.me() call
           setAuthToken(token);
           const user = normalizeUser(await authApi.me());
           set({ isLoggedIn: true, currentUser: user, isHydratingAuth: false });
@@ -960,6 +963,7 @@ export const useAppStore = create<AppStore>()(
   )
 );
 
+// CRITICAL FIX: Register handlers AFTER store creation so they can call store methods
 onUnauthorized(() => {
   void useAppStore.getState().forceLogout('Your session expired. Please sign in again.');
 });

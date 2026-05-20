@@ -1,6 +1,6 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getApiBaseUrl } from './apiConfig';
-import { storage } from './storage';
+import { appStorage } from './storage';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -66,29 +66,53 @@ export function setAuthToken(token: string | null) {
   _token = token;
 }
 
-// Use _token first, then fall back to storage
-api.interceptors.request.use(async (config) => {
-  const token = _token || await storage.get('pm_auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Use _token first, then fall back to storage - SAME storage instance as store
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  // CRITICAL FIX: Ensure headers object exists and is mutable
+  if (!config.headers) {
+    config.headers = new axios.AxiosHeaders();
   }
+  
+  // Try memory first, then persistent storage using SAME key as store.ts
+  const token = _token || await appStorage.getItem('pm_auth_token');
+  
+  if (token) {
+    // CRITICAL FIX: Use set method for proper header normalization
+    config.headers.set('Authorization', `Bearer ${token}`);
+  }
+  
   return config;
 });
 
+let _unauthorizedHandler: (() => void) | null = null;
+let _serverErrorHandler: ((error: ApiError) => void) | null = null;
+
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
+  async (error: AxiosError) => {
     if (error.response?.status === 401 && !error.config?.url?.includes('/login')) {
-      await storage.clearAuth();
+      // Clear everything
+      await appStorage.removeItem('pm_auth_token');
       _token = null;
-      // @ts-ignore
-      if (global.navigationRef?.current) {
-        // @ts-ignore
-        global.navigationRef.current.reset({ index: 0, routes: [{ name: 'Login' }] });
+      
+      if (_unauthorizedHandler) {
+        _unauthorizedHandler();
       } else {
-        console.warn('Navigation ref not available to redirect to login');
+        // Fallback if no handler registered
+        console.warn('Unauthorized - no handler registered');
       }
     }
+    
+    // Server errors (5xx)
+    if (error.response && error.response.status >= 500 && _serverErrorHandler) {
+      const apiError = new ApiError(
+        'Server error',
+        error.response.status,
+        error.response.data
+      );
+      _serverErrorHandler(apiError);
+    }
+    
     return Promise.reject(error);
   }
 );
@@ -144,10 +168,21 @@ export async function apiCall<T>(
   }
 }
 
-export function onUnauthorized(handler: any) { return () => { }; }
-export function onServerError(handler: any) { return () => { }; }
+export function onUnauthorized(handler: () => void) { 
+  _unauthorizedHandler = handler;
+  return () => { _unauthorizedHandler = null; };
+}
+
+export function onServerError(handler: (error: ApiError) => void) { 
+  _serverErrorHandler = handler;
+  return () => { _serverErrorHandler = null; };
+}
+
 export function cancelRequest(key: string) { }
-export async function verifyBackendReachable(timeoutMs = 2000) { return getApiBaseUrl(); }
+
+export async function verifyBackendReachable(timeoutMs = 2000) { 
+  return getApiBaseUrl(); 
+}
 
 export const authApi = {
   login: (email: string, password: string) =>

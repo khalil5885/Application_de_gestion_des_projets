@@ -79,7 +79,7 @@ export default function ApiSettingsScreen() {
             onChangeText={setUrl}
             autoCapitalize="none"
             autoCorrect={false}
-            placeholder="http://192.168.1.120:8000"
+            placeholder="http://exp://192.168.1.133:8000"
             placeholderTextColor={colors.textMuted}
             style={[
               styles.input,

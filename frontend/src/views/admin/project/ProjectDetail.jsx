@@ -6,6 +6,7 @@ import {
   cilArrowLeft, cilCalendar, cilUser, cilBriefcase,
   cilFilter, cilGrid, cilList, cilCheckCircle, cilPeople,
   cilPencil, cilCommentSquare, cilCloudUpload, cilFile, cilTrash,
+  cilImage, cilSpreadsheet, cilDescription, cilDataTransferDown,
 } from '@coreui/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../api'
@@ -59,6 +60,17 @@ const STATUS_LABELS = {
   done: 'Done',
   on_hold: 'On Hold',
 }
+
+// ─── File Type Helper ─────────────────────────────────────────────────────────
+
+const getFileIcon = (mimeType) => {
+  if (mimeType?.startsWith('image/')) return cilImage
+  if (mimeType?.includes('pdf')) return cilDescription
+  if (mimeType?.includes('spreadsheet') || mimeType?.includes('excel') || mimeType?.includes('csv')) return cilSpreadsheet
+  return cilFile
+}
+
+const isImageFile = (mimeType) => mimeType?.startsWith('image/')
 
 // ─── Meta Item ────────────────────────────────────────────────────────────────
 
@@ -364,6 +376,8 @@ const ProjectDetail = () => {
     }
     if (errors.length) {
       setError(errors.join(' '))
+      // Clear error after 5 seconds
+      setTimeout(() => setError(null), 5000)
     }
     return valid
   }
@@ -399,6 +413,7 @@ const ProjectDetail = () => {
     }
   }
 
+  // ─── Post Comment with Attachments ──────────────────────────────────────────
   const handlePostComment = async () => {
     if (!comment.trim() && selectedFiles.length === 0) return
     setPosting(true)
@@ -406,24 +421,31 @@ const ProjectDetail = () => {
 
     const formData = new FormData()
     formData.append('content', comment.trim())
-    selectedFiles.forEach(file => {
-      formData.append('attachments[]', file)
-    })
+    if (selectedFiles.length > 0) {
+      selectedFiles.forEach(file => {
+        formData.append('attachments[]', file)
+      })
+    }
 
     try {
-      // Adjust endpoint if your admin comment route is different
-      const response = await api.post(`/api/admin/projects/${id}/comments`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      // ✅ CRITICAL: Do NOT set Content-Type manually — let the browser set it with the boundary
+      const response = await api.post(`/api/admin/projects/${id}/comments`, formData)
+      
       const newComment = response.data?.data || response.data
+      
+      // Update local state with the new comment (which includes attachments from backend)
       setProject(current => ({
         ...current,
         comments: [newComment, ...(current?.comments || [])],
       }))
+      
+      // Reset form
       setComment('')
       setSelectedFiles([])
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post comment.')
+      console.error('Post comment error:', err)
+      setError(err.response?.data?.message || err.response?.data?.error || 'Failed to post comment.')
+      setTimeout(() => setError(null), 5000)
     } finally {
       setPosting(false)
     }
@@ -557,6 +579,13 @@ const ProjectDetail = () => {
                 <h6 className="fw-bold mb-0">Discussion</h6>
               </div>
 
+              {/* Error display */}
+              {error && (
+                <CAlert color="danger" className="py-2 mb-3" dismissible onClose={() => setError(null)}>
+                  <small>{error}</small>
+                </CAlert>
+              )}
+
               {/* Comment Form with Drag & Drop and File Attachments */}
               <CForm>
                 {/* Drag & drop zone */}
@@ -622,7 +651,7 @@ const ProjectDetail = () => {
                           className="d-flex align-items-center gap-2 bg-body-tertiary rounded-3 p-2"
                           style={{ fontSize: '0.8rem' }}
                         >
-                          <CIcon icon={cilFile} />
+                          <CIcon icon={getFileIcon(file.type)} />
                           <span className="text-truncate" style={{ maxWidth: '180px' }}>{file.name}</span>
                           <span className="text-muted">({formatFileSize(file.size)})</span>
                           <CButton
@@ -641,7 +670,7 @@ const ProjectDetail = () => {
                 )}
               </CForm>
 
-              {/* Existing comments with possible attachments */}
+              {/* Existing comments with attachments */}
               {comments.length === 0 ? (
                 <div className="text-body-secondary small py-3 text-center">No comments yet.</div>
               ) : (
@@ -650,21 +679,55 @@ const ProjectDetail = () => {
                     <div key={item.id} className="rounded-3 p-3 bg-body-tertiary">
                       <div className="fw-semibold small">{item.user?.name || 'Team'}</div>
                       <div className="small mb-2">{item.content || item.message}</div>
-                      {/* Display attachments if present */}
+                      
+                      {/* ✅ ATTACHMENTS DISPLAY — uses your getUrlAttribute accessor */}
                       {item.attachments && item.attachments.length > 0 && (
-                        <div className="mt-2 d-flex flex-wrap gap-2">
-                          {item.attachments.map((att, i) => (
-                            <a
-                              key={i}
-                              href={att.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="small text-primary d-inline-flex align-items-center gap-1"
-                            >
-                              <CIcon icon={cilFile} size="sm" />
-                              {att.name}
-                            </a>
-                          ))}
+                        <div className="mt-2">
+                          <div className="d-flex flex-wrap gap-2">
+                            {item.attachments.map((att, i) => (
+                              <div key={i} className="d-flex flex-column">
+                                {/* Image preview for image files */}
+                                {isImageFile(att.mime_type) ? (
+                                  <a
+                                    href={att.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-decoration-none"
+                                  >
+                                    <img
+                                      src={att.url}
+                                      alt={att.file_name}
+                                      className="rounded-2"
+                                      style={{ 
+                                        maxWidth: '120px', 
+                                        maxHeight: '80px', 
+                                        objectFit: 'cover',
+                                        border: '1px solid var(--cui-border-color)' 
+                                      }}
+                                    />
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={att.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download={att.file_name}
+                                    className="small text-primary d-inline-flex align-items-center gap-2 bg-white rounded-2 p-2 text-decoration-none"
+                                    style={{ border: '1px solid var(--cui-border-color)' }}
+                                  >
+                                    <CIcon icon={getFileIcon(att.mime_type)} size="sm" />
+                                    <span className="text-truncate" style={{ maxWidth: '140px' }}>
+                                      {att.file_name}
+                                    </span>
+                                    <CIcon icon={cilDataTransferDown} size="sm" />
+                                  </a>
+                                )}
+                                <small className="text-muted mt-1" style={{ fontSize: '0.7rem' }}>
+                                  {formatFileSize(att.file_size)}
+                                </small>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
