@@ -18,13 +18,26 @@ class CommentAttachment extends Model
         'file_size',
     ];
 
-    // Accessor to get full URL
-    public function getUrlAttribute()
+    protected $appends = ['url', 'name'];
+
+    public function getUrlAttribute(): string
     {
-        return Storage::url($this->file_path);
+        if (!$this->file_path) {
+            return '';
+        }
+
+        try {
+            return Storage::disk('public')->url($this->file_path);
+        } catch (\Exception $e) {
+            return '';
+        }
     }
 
-    // Relation back to comment
+    public function getNameAttribute(): string
+    {
+        return $this->file_name ?? '';
+    }
+
     public function comment()
     {
         return $this->belongsTo(Comment::class);

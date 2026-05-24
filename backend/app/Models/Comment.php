@@ -18,12 +18,13 @@ class Comment extends Model
         'content',
         'visibility',
     ];
+
     protected $with = ['attachments'];
 
     public function attachments()
-{
-    return $this->hasMany(CommentAttachment::class);
-}
+    {
+        return $this->hasMany(CommentAttachment::class);
+    }
 
     public function commentable(): MorphTo
     {

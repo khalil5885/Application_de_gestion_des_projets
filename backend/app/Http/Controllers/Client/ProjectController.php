@@ -7,7 +7,9 @@ use App\Http\Requests\StoreCommentRequest;
 use App\Http\Resources\CommentResource;
 use App\Http\Resources\ProjectResource;
 use App\Models\ActivityLog;
+use App\Models\CommentAttachment;
 use App\Models\Project;
+use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
@@ -20,34 +22,78 @@ class ProjectController extends Controller
                 ->latest()
                 ->paginate(15);
 
-            return $this->successResponse($this->paginate($projects, ProjectResource::class), 'Client projects retrieved successfully.');
+            return $this->successResponse(
+                $this->paginate($projects, ProjectResource::class),
+                'Client projects retrieved successfully.'
+            );
         });
     }
 
     public function show(Project $project)
     {
         return $this->handle(function () use ($project) {
-            abort_unless($project->client_id === request()->user()->id, 403, 'You are not allowed to view this project.');
+            abort_unless(
+                $project->client_id === request()->user()->id,
+                403,
+                'You are not allowed to view this project.'
+            );
 
-            $project->load(['client', 'projectType', 'members', 'rootTasks.children.assignee', 'comments.user']);
+            $project->load([
+                'client',
+                'projectType',
+                'members',
+                'rootTasks.children.assignee',
+                'comments.user',
+            ]);
 
-            return $this->successResponse(ProjectResource::make($project), 'Client project retrieved successfully.');
+            return $this->successResponse(
+                ProjectResource::make($project),
+                'Client project retrieved successfully.'
+            );
         });
     }
 
-    // public function addComment(StoreCommentRequest $request, Project $project)
-    // {
-    //     return $this->handle(function () use ($request, $project) {
-    //         abort_unless($project->client_id === $request->user()->id, 403, 'You are not allowed to comment on this project.');
+    public function addComment(StoreCommentRequest $request, Project $project)
+    {
+        return $this->handle(function () use ($request, $project) {
+            abort_unless(
+                $project->client_id === $request->user()->id,
+                403,
+                'You are not allowed to comment on this project.'
+            );
 
-    //         $comment = $project->comments()->create([
-    //             'user_id' => $request->user()->id,
-    //             'content' => $request->validated('content'),
-    //         ]);
+            $comment = $project->comments()->create([
+                'user_id'    => $request->user()->id,
+                'content'    => $request->input('content', ''),
+                'visibility' => 'public',
+            ]);
 
-    //         ActivityLog::record($request->user(), 'project_comment_created', $project, 'Client added a project comment.');
+            if ($request->hasFile('attachments')) {
+                foreach ($request->file('attachments') as $file) {
+                    $path = $file->store("comments/{$comment->id}", 'public');
 
-    //         return $this->successResponse(CommentResource::make($comment->load('user')), 'Project comment added successfully.', 201);
-    //     });
-    // }
+                    CommentAttachment::create([
+                        'comment_id' => $comment->id,
+                        'file_path'  => $path,
+                        'file_name'  => $file->getClientOriginalName(),
+                        'mime_type'  => $file->getMimeType(),
+                        'file_size'  => $file->getSize(),
+                    ]);
+                }
+            }
+
+            ActivityLog::record(
+                $request->user(),
+                'project_comment_created',
+                $project,
+                'Client added a project comment.'
+            );
+
+            return $this->successResponse(
+                CommentResource::make($comment->load('user')),
+                'Project comment added successfully.',
+                201
+            );
+        });
+    }
 }
