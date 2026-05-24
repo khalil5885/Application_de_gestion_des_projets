@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  # The Backend API
+  laravel:
+    build: ./backend
+    container_name: khalil-backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    networks:
+      - saas-network
+
+  # The React Frontend
+  react:
+    build: ./frontend
+    container_name: khalil-frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - saas-network
+
+  # The Database
+  db:
+    image: mysql:8.0
+    container_name: khalil-db
+    environment:
+      MYSQL_DATABASE: khalil_pro
+      MYSQL_PASSWORD: root
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - saas-network
+
+networks:
+  saas-network:
+    driver: bridge
+
+volumes:
+  mysql-data:

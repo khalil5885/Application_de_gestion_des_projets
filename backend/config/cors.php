@@ -6,8 +6,7 @@ return [
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => [env('FRONTEND_URL'), 'http://localhost:8081', 'http://192.168.1.15:8081', 'http://127.0.0.1:8081'],
-
+    'allowed_origins' => ['*'],
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],
@@ -16,6 +15,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => false,
 
 ];
