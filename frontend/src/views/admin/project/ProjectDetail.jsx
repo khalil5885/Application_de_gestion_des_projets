@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react'
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { CBadge, CSpinner, CAlert, CCard, CCardBody, CCol, CProgress, CRow, CFormTextarea, CButton, CForm } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
@@ -6,11 +6,15 @@ import {
   cilArrowLeft, cilCalendar, cilUser, cilBriefcase,
   cilFilter, cilGrid, cilList, cilCheckCircle, cilPeople,
   cilPencil, cilCommentSquare, cilCloudUpload, cilFile, cilTrash,
+  cilXCircle, cilWarning, cilChevronBottom, cilChevronTop
 } from '@coreui/icons'
 import { motion, AnimatePresence } from 'framer-motion'
 import api from '../../../api'
 import AiEstimationCard from '../../../components/project/AiEstimationCard'
 import ActivityFeed from '../../../components/dashboard/ActivityFeed'
+
+// Import your custom attachment features (Keep only one copy here)
+import { CommentBubble, AttachmentList, FileTypeIcon, formatFileSize as formatAttachmentSize } from '../../../components/comment/AttachmentIcon'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -36,13 +40,8 @@ const formatDate = (dateString) => {
   })
 }
 
-const formatFileSize = (bytes) => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-}
+// Use the imported formatFileSize from AttachmentIcon to avoid duplication
+const formatFileSize = formatAttachmentSize
 
 const STATUS_COLORS = {
   todo: 'warning',
@@ -231,41 +230,73 @@ const ProjectDetail = () => {
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef(null)
 
-  const fetchData = async () => {
+  // Error state for file validation
+  const [fileErrors, setFileErrors] = useState([])
+
+  // Drag assignment states
+  const [dragError, setDragError] = useState(null)
+  const [isDragging, setIsDragging] = useState(false)
+
+  // ─── Comment Pagination State ──────────────────────────────────────────────
+  const COMMENTS_PER_PAGE = 5
+  const [visibleCommentsCount, setVisibleCommentsCount] = useState(COMMENTS_PER_PAGE)
+  const [commentsExpanded, setCommentsExpanded] = useState(false)
+
+  const clearErrors = useCallback(() => {
+    setError(null)
+    setFileErrors([])
+    setDragError(null)
+  }, [])
+
+  const fetchData = useCallback(async () => {
+    setLoading(true)
+    clearErrors()
+
     try {
       // Project details
       const projectRes = await api.get(`/api/admin/projects/${id}`)
       const projectData = projectRes.data?.data
+
+      if (!projectData) {
+        throw new Error('Project data not found in response')
+      }
+
       console.log('Project response:', projectRes.data)
       setProject(projectData)
 
-      // Members
-      let members = []
-      if (projectData?.employees && Array.isArray(projectData.employees)) {
-        members = projectData.employees
-      } else if (projectData?.members && Array.isArray(projectData.members)) {
-        members = projectData.members
-      }
-
       // Tasks
       const tasksRes = await api.get(`/api/admin/projects/${id}/tasks`)
-      const tasksArray = tasksRes.data?.data?.items || []
-      console.log('Tasks response:', tasksRes.data)
-      setTasks(tasksArray)
+      const tasksArray = tasksRes.data?.data?.items || tasksRes.data?.data || tasksRes.data || []
+
+      if (!Array.isArray(tasksArray)) {
+        console.warn('Tasks response is not an array:', tasksArray)
+        setTasks([])
+      } else {
+        console.log('Tasks response:', tasksRes.data)
+        setTasks(tasksArray)
+      }
 
     } catch (err) {
       console.error('Fetch error:', err)
-      setError('Failed to load project.')
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to load project data.'
+      setError(errorMessage)
+      setProject(null)
+      setTasks([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [id, clearErrors])
 
   useEffect(() => {
+    if (!id) {
+      setError('No project ID provided')
+      setLoading(false)
+      return
+    }
+
     const timer = window.setTimeout(fetchData, 0)
     return () => window.clearTimeout(timer)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
+  }, [id, fetchData])
 
   const { assignedColumns, unassignedColumn } = useMemo(() => {
     if (!project) return {
@@ -316,16 +347,41 @@ const ProjectDetail = () => {
     return f
   }, [assignedColumns, selectedRole])
 
-  const onDragStart = (e, taskId) => e.dataTransfer.setData('taskId', taskId)
-  const onDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over') }
-  const onDragLeave = (e) => { e.currentTarget.classList.remove('drag-over') }
+  const onDragStart = (e, taskId) => {
+    e.dataTransfer.setData('taskId', taskId)
+    e.dataTransfer.effectAllowed = 'move'
+    setIsDragging(true)
+    clearErrors()
+  }
+
+  const onDragEnd = () => {
+    setIsDragging(false)
+  }
+
+  const onDragOver = (e) => { 
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    e.currentTarget.classList.add('drag-over') 
+  }
+
+  const onDragLeave = (e) => { 
+    e.currentTarget.classList.remove('drag-over') 
+  }
+
   const onDrop = async (e, targetUserId) => {
     e.preventDefault()
     e.currentTarget.classList.remove('drag-over')
+    setIsDragging(false)
+
     const taskId = e.dataTransfer.getData('taskId')
-    if (!taskId) return
+    if (!taskId) {
+      setDragError('No task ID found in drag data')
+      return
+    }
 
     try {
+      setDragError(null)
+
       if (targetUserId === 'unassigned') {
         await api.patch(`/api/admin/tasks/${taskId}/unassignEmployee`)
       } else {
@@ -333,9 +389,13 @@ const ProjectDetail = () => {
           assigned_to: parseInt(targetUserId, 10)
         })
       }
-      fetchData()
+
+      // Refresh data after successful assignment
+      await fetchData()
     } catch (err) {
-      console.error('Assignment failed:')
+      console.error('Assignment failed:', err)
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to assign task'
+      setDragError(errorMessage)
     }
   }
 
@@ -351,6 +411,7 @@ const ProjectDetail = () => {
   const validateFiles = (fileList) => {
     const valid = []
     const errors = []
+
     for (const file of fileList) {
       if (file.type.startsWith('video/')) {
         errors.push(`${file.name} is a video. Videos are not allowed.`)
@@ -362,14 +423,22 @@ const ProjectDetail = () => {
       }
       valid.push(file)
     }
+
     if (errors.length) {
-      setError(errors.join(' '))
+      setFileErrors(errors)
+      // Auto-clear file errors after 5 seconds
+      setTimeout(() => setFileErrors([]), 5000)
     }
+
     return valid
   }
 
   const handleFileSelect = (fileList) => {
+    clearErrors()
     const newFiles = Array.from(fileList)
+
+    if (newFiles.length === 0) return
+
     const validFiles = validateFiles(newFiles)
     if (validFiles.length) {
       setSelectedFiles(prev => [...prev, ...validFiles])
@@ -394,6 +463,8 @@ const ProjectDetail = () => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
+    clearErrors()
+
     if (e.dataTransfer.files && e.dataTransfer.files.length) {
       handleFileSelect(e.dataTransfer.files)
     }
@@ -401,8 +472,9 @@ const ProjectDetail = () => {
 
   const handlePostComment = async () => {
     if (!comment.trim() && selectedFiles.length === 0) return
+
     setPosting(true)
-    setError(null)
+    clearErrors()
 
     const formData = new FormData()
     formData.append('content', comment.trim())
@@ -411,26 +483,74 @@ const ProjectDetail = () => {
     })
 
     try {
-      // Adjust endpoint if your admin comment route is different
       const response = await api.post(`/api/admin/projects/${id}/comments`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
+
       const newComment = response.data?.data || response.data
+
+      if (!newComment) {
+        throw new Error('No comment data returned from server')
+      }
+
       setProject(current => ({
         ...current,
         comments: [newComment, ...(current?.comments || [])],
       }))
       setComment('')
       setSelectedFiles([])
+      // Reset pagination to show the new comment
+      setVisibleCommentsCount(COMMENTS_PER_PAGE)
+      setCommentsExpanded(false)
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post comment.')
+      console.error('Comment post error:', err)
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to post comment.'
+      setError(errorMessage)
     } finally {
       setPosting(false)
     }
   }
 
+  // ─── Comment Pagination Handlers ────────────────────────────────────────────
+  const handleViewMoreComments = () => {
+    setVisibleCommentsCount(prev => prev + COMMENTS_PER_PAGE)
+  }
+
+  const handleToggleCommentsExpand = () => {
+    if (commentsExpanded) {
+      setCommentsExpanded(false)
+      setVisibleCommentsCount(COMMENTS_PER_PAGE)
+    } else {
+      setCommentsExpanded(true)
+      setVisibleCommentsCount(comments.length)
+    }
+  }
+
+  // ─── Error Display Component ────────────────────────────────────────────────
+  const ErrorAlert = ({ message, onDismiss }) => (
+    <CAlert color="danger" className="d-flex align-items-center gap-2 mb-3">
+      <CIcon icon={cilXCircle} />
+      <div className="flex-grow-1">{message}</div>
+      {onDismiss && (
+        <CButton color="danger" variant="ghost" size="sm" onClick={onDismiss}>
+          <CIcon icon={cilXCircle} size="sm" />
+        </CButton>
+      )}
+    </CAlert>
+  )
+
   if (loading) return <div className="text-center py-5"><CSpinner color="primary" /></div>
-  if (error && !project) return <CAlert color="danger">{error}</CAlert>
+  if (error && !project) return (
+    <div className="py-5">
+      <ErrorAlert message={error} onDismiss={() => { clearErrors(); navigate('/admin/projects') }} />
+      <div className="text-center">
+        <CButton color="primary" onClick={() => navigate('/admin/projects')}>
+          <CIcon icon={cilArrowLeft} className="me-2" />
+          Back to Projects
+        </CButton>
+      </div>
+    </div>
+  )
   if (!project) return null
 
   const completedTasks = tasks.filter(task => task.status === 'done').length
@@ -438,7 +558,28 @@ const ProjectDetail = () => {
   const overdueTasks = tasks.filter(task => task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done').length
   const progress = tasks.length ? Math.round((completedTasks / tasks.length) * 100) : 0
   const members = project.employees || project.members || []
-  const comments = project.comments || []
+
+  // Normalize comments to ensure attachments have proper fields for FileTypeIcon
+  const comments = (project.comments || []).map(comment => ({
+    ...comment,
+    // Normalize attachments to ensure they have the fields FileTypeIcon expects
+    attachments: (comment.attachments || []).map(att => ({
+      ...att,
+      id: att.id || att.attachment_id || `att-${Math.random().toString(36).substr(2, 9)}`,
+      file_name: att.file_name || att.name || att.filename || 'Attachment',
+      mime_type: att.mime_type || att.type || att.content_type || '',
+      file_size: att.file_size || att.size || att.fileSize || 0,
+      file_path: att.file_path || att.path || att.url || att.link || '#',
+      url: att.url || att.file_path || att.path || att.link || '#',
+    }))
+  }))
+
+  // ─── Comment Pagination Logic ─────────────────────────────────────────────
+  const totalComments = comments.length
+  const hasMoreComments = totalComments > visibleCommentsCount
+  const visibleComments = comments.slice(0, visibleCommentsCount)
+  const remainingComments = totalComments - visibleCommentsCount
+
   const files = project.files || project.documents || project.attachments || []
   const activity = project.recent_activity || project.activity || comments
 
@@ -463,6 +604,20 @@ const ProjectDetail = () => {
           {STATUS_LABELS[project.status]}
         </CBadge>
       </div>
+
+      {/* Global Error Display */}
+      {error && <ErrorAlert message={error} onDismiss={clearErrors} />}
+
+      {/* Drag Assignment Error */}
+      {dragError && (
+        <CAlert color="warning" className="d-flex align-items-center gap-2 mb-3">
+          <CIcon icon={cilWarning} />
+          {dragError}
+          <CButton color="warning" variant="ghost" size="sm" className="ms-auto" onClick={() => setDragError(null)}>
+            <CIcon icon={cilXCircle} size="sm" />
+          </CButton>
+        </CAlert>
+      )}
 
       {/* Meta strip */}
       <div
@@ -555,10 +710,27 @@ const ProjectDetail = () => {
               <div className="d-flex align-items-center gap-2 mb-3">
                 <CIcon icon={cilCommentSquare} className="text-primary" />
                 <h6 className="fw-bold mb-0">Discussion</h6>
+                {totalComments > 0 && (
+                  <CBadge color="primary" shape="rounded-pill" className="ms-2">
+                    {totalComments}
+                  </CBadge>
+                )}
               </div>
 
               {/* Comment Form with Drag & Drop and File Attachments */}
               <CForm>
+                {/* File validation errors */}
+                {fileErrors.length > 0 && (
+                  <div className="mb-2">
+                    {fileErrors.map((err, idx) => (
+                      <CAlert key={idx} color="warning" className="py-1 px-2 mb-1 d-flex align-items-center gap-2">
+                        <CIcon icon={cilWarning} size="sm" />
+                        <small>{err}</small>
+                      </CAlert>
+                    ))}
+                  </div>
+                )}
+
                 {/* Drag & drop zone */}
                 <div
                   className={`position-relative mb-3 ${dragActive ? 'bg-light border-primary' : ''}`}
@@ -586,7 +758,8 @@ const ProjectDetail = () => {
                         color="secondary"
                         variant="outline"
                         size="sm"
-                        onClick={() => fileInputRef.current.click()}
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={posting}
                       >
                         <CIcon icon={cilCloudUpload} className="me-1" />
                         Attach files
@@ -622,7 +795,7 @@ const ProjectDetail = () => {
                           className="d-flex align-items-center gap-2 bg-body-tertiary rounded-3 p-2"
                           style={{ fontSize: '0.8rem' }}
                         >
-                          <CIcon icon={cilFile} />
+                          <FileTypeIcon mimeType={file.type} fileName={file.name} size={20} />
                           <span className="text-truncate" style={{ maxWidth: '180px' }}>{file.name}</span>
                           <span className="text-muted">({formatFileSize(file.size)})</span>
                           <CButton
@@ -631,6 +804,7 @@ const ProjectDetail = () => {
                             size="sm"
                             className="p-0"
                             onClick={() => removeFile(idx)}
+                            disabled={posting}
                           >
                             <CIcon icon={cilTrash} />
                           </CButton>
@@ -641,35 +815,48 @@ const ProjectDetail = () => {
                 )}
               </CForm>
 
-              {/* Existing comments with possible attachments */}
+              {/* Existing comments with pagination - ONLY this section expands */}
               {comments.length === 0 ? (
                 <div className="text-body-secondary small py-3 text-center">No comments yet.</div>
               ) : (
-                <div className="d-flex flex-column gap-3">
-                  {comments.slice(0, 10).map((item) => (
-                    <div key={item.id} className="rounded-3 p-3 bg-body-tertiary">
-                      <div className="fw-semibold small">{item.user?.name || 'Team'}</div>
-                      <div className="small mb-2">{item.content || item.message}</div>
-                      {/* Display attachments if present */}
-                      {item.attachments && item.attachments.length > 0 && (
-                        <div className="mt-2 d-flex flex-wrap gap-2">
-                          {item.attachments.map((att, i) => (
-                            <a
-                              key={i}
-                              href={att.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="small text-primary d-inline-flex align-items-center gap-1"
-                            >
-                              <CIcon icon={cilFile} size="sm" />
-                              {att.name}
-                            </a>
-                          ))}
-                        </div>
-                      )}
+                <>
+                  <div className="d-flex flex-column gap-3">
+                    {visibleComments.map((item) => (
+                      <CommentBubble key={item.id || `comment-${Math.random().toString(36).substr(2, 9)}`} comment={item} />
+                    ))}
+                  </div>
+
+                  {/* Pagination Controls - Only for comments */}
+                  {totalComments > COMMENTS_PER_PAGE && (
+                    <div className="d-flex flex-column align-items-center gap-2 mt-3 pt-3 border-top">
+                      <div className="small text-body-secondary">
+                        Showing {visibleComments.length} of {totalComments} comments
+                      </div>
+                      <div className="d-flex gap-2">
+                        {!commentsExpanded && hasMoreComments && (
+                          <CButton
+                            color="primary"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleViewMoreComments}
+                          >
+                            <CIcon icon={cilChevronBottom} className="me-1" />
+                            View More ({remainingComments} remaining)
+                          </CButton>
+                        )}
+                        <CButton
+                          color="secondary"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleToggleCommentsExpand}
+                        >
+                          <CIcon icon={commentsExpanded ? cilChevronTop : cilChevronBottom} className="me-1" />
+                          {commentsExpanded ? 'Show Less' : 'Show All'}
+                        </CButton>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  )}
+                </>
               )}
             </CCardBody>
           </CCard>

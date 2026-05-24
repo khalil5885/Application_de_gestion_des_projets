@@ -11,9 +11,11 @@ import {
   CFormInput,
   CBadge,
   CSpinner,
+  CAlert,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import {cilTask,
+import {
+  cilTask,
   cilPeople,
   cilArrowRight,
   cilPlus,
@@ -22,12 +24,17 @@ import {cilTask,
   cilCheckAlt,
   cilCommentSquare,
   cilSend,
-  cilCloudUpload,   
-  cilFile,     
-  cilTrash,  
+  cilCloudUpload,
+  cilFile,
+  cilTrash,
+  cilXCircle,
+  cilWarning,
 } from '@coreui/icons'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../api'
+
+// Import attachment components for file icons in comments
+import { FileTypeIcon, formatFileSize as formatAttachmentSize } from '../comment/AttachmentIcon.jsx'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -122,6 +129,20 @@ const MemberChip = ({ member, onRemove }) => {
   )
 }
 
+// ─── ErrorAlert Component ────────────────────────────────────────────────────
+
+const ErrorAlert = ({ message, onDismiss, color = 'danger' }) => (
+  <CAlert color={color} className="d-flex align-items-center gap-2 mb-2 py-2 px-3">
+    <CIcon icon={color === 'danger' ? cilXCircle : cilWarning} size="sm" />
+    <div className="flex-grow-1 small">{message}</div>
+    {onDismiss && (
+      <CButton color={color} variant="ghost" size="sm" className="p-0" onClick={onDismiss}>
+        <CIcon icon={cilXCircle} size="sm" />
+      </CButton>
+    )}
+  </CAlert>
+)
+
 // ─── AddMemberPanel ───────────────────────────────────────────────────────────
 
 const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
@@ -133,18 +154,22 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
   const [role, setRole]       = useState('developer')
   const [adding, setAdding]   = useState(false)
   const [success, setSuccess] = useState(false)
+  const [error, setError]     = useState(null)
   const searchRef = useRef(null)
 
   useEffect(() => {
-    if (!open) { setSearch(''); setSelected(null); setSuccess(false); return }
+    if (!open) { setSearch(''); setSelected(null); setSuccess(false); setError(null); return }
     const load = async () => {
       setLoading(true)
+      setError(null)
       try {
         const res = await api.get('/api/admin/users')
-        const employees = (res.data.data?.data?.items || res.data.data?.items || [])
+        const employees = (res.data.data?.data?.items || res.data.data?.items || res.data?.items || [])
           .filter((u) => u.global_role === 'employee')
         setAllUsers(employees)
-      } catch { /* silent */ } finally { setLoading(false) }
+      } catch (err) {
+        setError(err.response?.data?.message || err.message || 'Failed to load employees.')
+      } finally { setLoading(false) }
     }
     load()
     setTimeout(() => searchRef.current?.focus(), 120)
@@ -163,6 +188,7 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
   const handleAdd = async () => {
     if (!selected) return
     setAdding(true)
+    setError(null)
     try {
       await api.post(`/api/admin/projects/${projectId}/assignEmployee`, {
         member_id: selected.id,
@@ -172,7 +198,9 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
       setSelected(null)
       setSearch('')
       setTimeout(() => { setSuccess(false); onAdded() }, 900)
-    } catch { /* silent */ } finally { setAdding(false) }
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'Failed to add member.')
+    } finally { setAdding(false) }
   }
 
   return (
@@ -196,7 +224,7 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
       <div
         style={{
           overflow: 'hidden',
-          maxHeight: open ? 460 : 0,
+          maxHeight: open ? 500 : 0,
           transition: 'max-height 0.35s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
@@ -207,6 +235,9 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
             border: '1px solid var(--cui-border-color-translucent)',
           }}
         >
+          {/* Error */}
+          {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+
           {/* Search */}
           <div className="position-relative mb-3">
             <CIcon
@@ -331,36 +362,29 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
   )
 }
 
-// ─── CommentSection ───────────────────────────────────────────────────────────
-//
-// • Reads from `initialComments` (passed from detail.comments — already loaded
-//   by the fetchDetail call in ProjectDrawer, no extra network request).
-// • POSTs to  POST /api/admin/projects/{id}/comments  { content: string }
-// • Optimistic insert: comment appears immediately, gets replaced by server
-//   object on success, or rolled back with the text restored on failure.
-// • Ctrl+Enter / Cmd+Enter keyboard shortcut to send.
-// ─── CommentSection (with file attachments) ───────────────────────────────────
+// ─── CommentSection (with file attachments + error handling + file icons) ───
 
 const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
   const [comments, setComments] = useState(initialComments)
   const [body, setBody]         = useState('')
   const [sending, setSending]   = useState(false)
   const [error, setError]       = useState(null)
+  const [fileErrors, setFileErrors] = useState([])
   const [selectedFiles, setSelectedFiles] = useState([])
   const [dragActive, setDragActive] = useState(false)
   const fileInputRef = useRef(null)
   const bottomRef    = useRef(null)
   const textareaRef  = useRef(null)
 
-  // File helpers
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
+  // Use imported formatFileSize
+  const formatFileSize = formatAttachmentSize
 
+  const clearErrors = useCallback(() => {
+    setError(null)
+    setFileErrors([])
+  }, [])
+
+  // File helpers
   const validateFiles = (fileList) => {
     const valid = []
     const errors = []
@@ -375,11 +399,15 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
       }
       valid.push(file)
     }
-    if (errors.length) setError(errors.join(' '))
+    if (errors.length) {
+      setFileErrors(errors)
+      setTimeout(() => setFileErrors([]), 5000)
+    }
     return valid
   }
 
   const handleFileSelect = (fileList) => {
+    clearErrors()
     const newFiles = Array.from(fileList)
     const validFiles = validateFiles(newFiles)
     if (validFiles.length) {
@@ -402,6 +430,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
     e.preventDefault()
     e.stopPropagation()
     setDragActive(false)
+    clearErrors()
     if (e.dataTransfer.files && e.dataTransfer.files.length) {
       handleFileSelect(e.dataTransfer.files)
     }
@@ -412,8 +441,8 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
     setComments(initialComments)
     setBody('')
     setSelectedFiles([])
-    setError(null)
-  }, [initialComments])
+    clearErrors()
+  }, [initialComments, clearErrors])
 
   // Auto-scroll to newest comment
   useEffect(() => {
@@ -425,7 +454,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
     if ((!trimmed && selectedFiles.length === 0) || sending) return
 
     setSending(true)
-    setError(null)
+    clearErrors()
 
     const optimisticId = `optimistic-${Date.now()}`
     const optimistic = {
@@ -453,6 +482,11 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       const saved = res.data?.data || res.data
+
+      if (!saved) {
+        throw new Error('No comment data returned from server')
+      }
+
       setComments((prev) =>
         prev.map((c) => (c.id === optimisticId ? { ...optimistic, ...saved } : c)),
       )
@@ -461,18 +495,31 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
       setComments((prev) => prev.filter((c) => c.id !== optimisticId))
       setBody(trimmed)
       setSelectedFiles(optimisticFiles)
-      setError(err.response?.data?.message || 'Failed to send. Try again.')
+      setError(err.response?.data?.message || err.message || 'Failed to send. Try again.')
     } finally {
       setSending(false)
       textareaRef.current?.focus()
     }
-  }, [body, sending, projectId, currentUser, selectedFiles])
+  }, [body, sending, projectId, currentUser, selectedFiles, clearErrors])
 
   const handleKeyDown = (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault()
       handleSend()
     }
+  }
+
+  // Normalize attachments for FileTypeIcon
+  const normalizeAttachments = (attachments = []) => {
+    return attachments.map(att => ({
+      ...att,
+      id: att.id || att.attachment_id || `att-${Math.random().toString(36).substr(2, 9)}`,
+      file_name: att.file_name || att.name || att.filename || 'Attachment',
+      mime_type: att.mime_type || att.type || att.content_type || '',
+      file_size: att.file_size || att.size || att.fileSize || 0,
+      file_path: att.file_path || att.path || att.url || att.link || '#',
+      url: att.url || att.file_path || att.path || att.link || '#',
+    }))
   }
 
   return (
@@ -495,6 +542,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
           comments.map((c) => {
             const authorName   = c.user?.name || c.author?.name || 'Team'
             const isOptimistic = String(c.id).startsWith('optimistic-')
+            const normalizedAttachments = normalizeAttachments(c.attachments)
 
             return (
               <div
@@ -528,20 +576,29 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
                     }}
                   >
                     {c.content || c.message}
-                    {/* Display attachments if returned from backend */}
-                    {c.attachments && c.attachments.length > 0 && (
+
+                    {/* FIXED: Display attachments with proper file type icons */}
+                    {normalizedAttachments.length > 0 && (
                       <div className="mt-2 d-flex flex-wrap gap-2">
-                        {c.attachments.map((att, idx) => (
+                        {normalizedAttachments.map((att) => (
                           <a
-                            key={idx}
+                            key={att.id}
                             href={att.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="d-inline-flex align-items-center gap-1 small"
-                            style={{ color: 'var(--cui-primary)' }}
+                            className="d-inline-flex align-items-center gap-2 small rounded-2 px-2 py-1"
+                            style={{ 
+                              background: 'var(--cui-body-bg)', 
+                              border: '1px solid var(--cui-border-color-translucent)',
+                              textDecoration: 'none',
+                              color: 'var(--cui-body-color)',
+                              maxWidth: 200,
+                            }}
+                            title={`Download ${att.file_name}`}
                           >
-                            <CIcon icon={cilFile} size="sm" />
-                            {att.name}
+                            <FileTypeIcon mimeType={att.mime_type} fileName={att.file_name} size={18} />
+                            <span className="text-truncate" style={{ fontSize: 11, maxWidth: 120 }}>{att.file_name}</span>
+                            <span className="text-muted" style={{ fontSize: 10 }}>({formatFileSize(att.file_size)})</span>
                           </a>
                         ))}
                       </div>
@@ -556,12 +613,17 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
       </div>
 
       {/* Inline error */}
-      {error && (
-        <div
-          className="rounded-2 px-3 py-2 mb-2 small text-danger"
-          style={{ background: 'rgba(229,83,83,0.08)', border: '1px solid rgba(229,83,83,0.25)' }}
-        >
-          {error}
+      {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+
+      {/* File validation errors */}
+      {fileErrors.length > 0 && (
+        <div className="mb-2">
+          {fileErrors.map((err, idx) => (
+            <CAlert key={idx} color="warning" className="py-1 px-2 mb-1 d-flex align-items-center gap-2">
+              <CIcon icon={cilWarning} size="sm" />
+              <small>{err}</small>
+            </CAlert>
+          ))}
         </div>
       )}
 
@@ -599,12 +661,14 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
           <div className="d-flex gap-2 align-items-center">
             <button
               type="button"
-              onClick={() => fileInputRef.current.click()}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={sending}
               style={{
                 background: 'none', border: 'none', padding: '4px 8px',
                 borderRadius: 6, fontSize: 11, fontWeight: 600,
-                cursor: 'pointer', color: 'var(--cui-primary)',
+                cursor: sending ? 'default' : 'pointer', color: 'var(--cui-primary)',
                 display: 'inline-flex', alignItems: 'center', gap: 4,
+                opacity: sending ? 0.5 : 1,
               }}
             >
               <CIcon icon={cilCloudUpload} size="sm" />
@@ -635,7 +699,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
         </div>
       </div>
 
-      {/* Selected files preview */}
+      {/* Selected files preview - FIXED: using FileTypeIcon */}
       {selectedFiles.length > 0 && (
         <div className="mt-2">
           <div className="small fw-semibold mb-1">Attachments to upload:</div>
@@ -646,14 +710,16 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
                 className="d-flex align-items-center gap-2 rounded-3 p-2"
                 style={{ background: 'var(--cui-secondary-bg)', fontSize: '0.75rem' }}
               >
-                <CIcon icon={cilFile} />
+                <FileTypeIcon mimeType={file.type} fileName={file.name} size={18} />
                 <span className="text-truncate" style={{ maxWidth: '150px' }}>{file.name}</span>
                 <span className="text-muted">({formatFileSize(file.size)})</span>
                 <button
                   onClick={() => removeFile(idx)}
+                  disabled={sending}
                   style={{
-                    background: 'none', border: 'none', cursor: 'pointer',
+                    background: 'none', border: 'none', cursor: sending ? 'default' : 'pointer',
                     color: 'var(--cui-danger)', padding: 0, lineHeight: 1,
+                    opacity: sending ? 0.5 : 1,
                   }}
                 >
                   <CIcon icon={cilTrash} size="sm" />
@@ -666,47 +732,68 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
     </div>
   )
 }
+
 // ─── ProjectDrawer ────────────────────────────────────────────────────────────
 
 const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
   const navigate = useNavigate()
-  const { user } = useAuth()   // for optimistic comment avatar
+  const { user } = useAuth()
 
   const [showTasks, setShowTasks]       = useState(false)
   const [detail, setDetail]             = useState(null)
   const [loadingDetail, setLoadingDetail] = useState(false)
+  const [error, setError]               = useState(null)
+
+  const clearError = useCallback(() => setError(null), [])
 
   const fetchDetail = useCallback(async () => {
     if (!project?.id) return
     setLoadingDetail(true)
+    clearError()
     try {
       const res = await api.get(`/api/admin/projects/${project.id}`)
-      setDetail(res.data.data)
-    } catch { /* silent */ } finally { setLoadingDetail(false) }
-  }, [project?.id])
+      const data = res.data?.data
+      if (!data) {
+        throw new Error('Project detail data not found in response')
+      }
+      setDetail(data)
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || 'Failed to load project details.'
+      setError(message)
+    } finally { setLoadingDetail(false) }
+  }, [project?.id, clearError])
 
   useEffect(() => {
     if (!visible || !project?.id) return
     setShowTasks(false)
     setDetail(null)
+    setError(null)
     fetchDetail()
   }, [visible, project?.id, fetchDetail])
 
   const handleUpdate = async (field, value) => {
+    clearError()
     try {
       await api.patch(`/api/admin/projects/${project.id}`, { [field]: value })
       onUpdate()
-    } catch (err) { console.error('Update failed', err) }
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || 'Failed to update project.'
+      setError(message)
+    }
   }
 
   const handleRemoveMember = async (memberId) => {
+    clearError()
     try {
       await api.delete(`/api/admin/projects/${project.id}/members`, {
         data: { member_id: memberId },
       })
       fetchDetail()
       onUpdate()
-    } catch (err) { console.error('Remove failed', err) }
+    } catch (err) {
+      const message = err.response?.data?.message || err.message || 'Failed to remove member.'
+      setError(message)
+    }
   }
 
   if (!project) return null
@@ -723,6 +810,9 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
       </COffcanvasHeader>
 
       <COffcanvasBody className="d-flex flex-column gap-4 pt-4">
+
+        {/* Global Error */}
+        {error && <ErrorAlert message={error} onDismiss={clearError} />}
 
         {/* Client */}
         <div>
