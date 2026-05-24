@@ -1,6 +1,6 @@
-import axios, { AxiosError } from 'axios';
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getApiBaseUrl } from './apiConfig';
-import { storage } from './storage';
+import { appStorage } from './storage';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -24,40 +24,44 @@ export class ApiError extends Error {
 }
 
 export const ENDPOINTS = {
-  LOGIN: '/login',
-  LOGOUT: '/logout',
-  USER: '/user',
-  SETUP_PASSWORD_VERIFY: '/setup-password/verify',
-  SETUP_PASSWORD: '/setup-password',
-  NOTIFICATIONS: '/notifications',
-  NOTIFICATIONS_UNREAD_COUNT: '/notifications/unread-count',
-  NOTIFICATIONS_READ_ALL: '/notifications/read-all',
-  ADMIN_DASHBOARD: '/admin/dashboard',
-  ADMIN_DASHBOARD_ACTIVITY: '/admin/dashboard/activity',
-  ADMIN_ACTIVITY_LOGS: '/admin/activity-logs',
-  ADMIN_WORKLOAD: '/admin/workload',
-  ADMIN_REQUESTS: '/admin/requests',
-  ADMIN_USERS: '/admin/users',
-  ADMIN_PROJECTS: '/admin/projects',
-  ADMIN_TASKS: '/admin/tasks',
-  ADMIN_TASKS_OVERVIEW: '/admin/tasks-overview',
-  ADMIN_PROJECT_TYPES: '/admin/project-types',
-  ADMIN_TASK_TEMPLATES: '/admin/task-templates',
-  EMPLOYEE_DASHBOARD: '/employee/dashboard',
-  EMPLOYEE_WORKSPACE_CALENDAR: '/employee/workspace/calendar',
-  EMPLOYEE_WORKSPACE_ACTIVITY: '/employee/workspace/activity',
-  EMPLOYEE_WORKSPACE_PRODUCTIVITY: '/employee/workspace/productivity',
-  EMPLOYEE_PROJECTS: '/employee/projects',
-  EMPLOYEE_REQUESTS: '/employee/requests',
-  EMPLOYEE_TASKS: '/employee/tasks',
-  CLIENT_ACTIVITY: '/client/activity',
-  CLIENT_PROJECTS: '/client/projects',
-  CLIENT_DASHBOARD: '/client/dashboard',
+  LOGIN: '/api/login',
+  LOGOUT: '/api/logout',
+  USER: '/api/user',
+  SETUP_PASSWORD_VERIFY: '/api/setup-password/verify',
+  SETUP_PASSWORD: '/api/setup-password',
+  NOTIFICATIONS: '/api/notifications',
+  NOTIFICATIONS_UNREAD_COUNT: '/api/notifications/unread-count',
+  NOTIFICATIONS_READ_ALL: '/api/notifications/read-all',
+  ADMIN_DASHBOARD: '/api/admin/dashboard',
+  ADMIN_DASHBOARD_ACTIVITY: '/api/admin/dashboard/activity',
+  ADMIN_ACTIVITY_LOGS: '/api/admin/activity-logs',
+  ADMIN_WORKLOAD: '/api/admin/workload',
+  ADMIN_REQUESTS: '/api/admin/requests',
+  ADMIN_USERS: '/api/admin/users',
+  ADMIN_PROJECTS: '/api/admin/projects',
+  ADMIN_TASKS: '/api/admin/tasks',
+  ADMIN_TASKS_OVERVIEW: '/api/admin/tasks-overview',
+  ADMIN_PROJECT_TYPES: '/api/admin/project-types',
+  ADMIN_TASK_TEMPLATES: '/api/admin/task-templates',
+  EMPLOYEE_DASHBOARD: '/api/employee/dashboard',
+  EMPLOYEE_WORKSPACE_CALENDAR: '/api/employee/workspace/calendar',
+  EMPLOYEE_WORKSPACE_ACTIVITY: '/api/employee/workspace/activity',
+  EMPLOYEE_WORKSPACE_PRODUCTIVITY: '/api/employee/workspace/productivity',
+  EMPLOYEE_PROJECTS: '/api/employee/projects',
+  EMPLOYEE_REQUESTS: '/api/employee/requests',
+  EMPLOYEE_TASKS: '/api/employee/tasks',
+  CLIENT_ACTIVITY: '/api/client/activity',
+  CLIENT_PROJECTS: '/api/client/projects',
+  CLIENT_DASHBOARD: '/api/client/dashboard',
 } as const;
 
 export const api = axios.create({
   timeout: 10000,
-  headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+  headers: { 
+    'Content-Type': 'application/json', 
+    'Accept': 'application/json',
+    'ngrok-skip-browser-warning': '1',
+  },
 });
 
 let _token: string | null = null;
@@ -66,29 +70,58 @@ export function setAuthToken(token: string | null) {
   _token = token;
 }
 
-// Use _token first, then fall back to storage
-api.interceptors.request.use(async (config) => {
-  const token = _token || await storage.get('pm_auth_token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// CRITICAL FIX: Use appStorage (same as store.ts) and proper Axios header handling
+api.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+  if (!config.headers) {
+    config.headers = new axios.AxiosHeaders();
   }
+
+  // _token is set synchronously by setAuthToken() in the login flow
+  // Only hit storage for cold starts (hydrateAuth)
+  let token = _token;
+  if (!token) {
+    token = await appStorage.getItem('pm_auth_token');
+    if (token) setAuthToken(token); // cache it back into memory
+  }
+
+  console.log(`[interceptor] token: ${token?.substring(0, 20)} | url: ${config.url}`);
+
+  if (token) {
+    config.headers.set('Authorization', `Bearer ${token}`);
+    config.headers.set('X-Auth-Token', token);
+    console.log('[interceptor] Authorization header set to:', config.headers.get('Authorization'));
+    console.log('[interceptor] full URL:', config.url);
+  }
+
   return config;
 });
 
+// CRITICAL FIX: Store handlers so they actually work
+let _unauthorizedHandler: (() => void) | null = null;
+let _serverErrorHandler: ((error: ApiError) => void) | null = null;
+
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/login')) {
-      await storage.clearAuth();
+  async (error: AxiosError) => {
+    const status = error.response?.status;
+
+    // Only clear auth on a real HTTP 401 — not on network errors (status undefined)
+    if (
+      status === 401 &&
+      error.config?.url &&
+      !error.config.url.includes('/login') &&
+      !error.config.url.includes('/logout')
+    ) {
+      await appStorage.removeItem('pm_auth_token');
       _token = null;
-      // @ts-ignore
-      if (global.navigationRef?.current) {
-        // @ts-ignore
-        global.navigationRef.current.reset({ index: 0, routes: [{ name: 'Login' }] });
-      } else {
-        console.warn('Navigation ref not available to redirect to login');
-      }
+      if (_unauthorizedHandler) _unauthorizedHandler();
     }
+
+    if (status && status >= 500 && _serverErrorHandler) {
+      const apiError = new ApiError('Server error', status, error.response?.data);
+      _serverErrorHandler(apiError);
+    }
+
     return Promise.reject(error);
   }
 );
@@ -112,7 +145,7 @@ export async function apiCall<T>(
 ): Promise<T> {
   try {
     const baseUrl = await getApiBaseUrl();
-    const fullUrl = baseUrl.replace(/\/+$/, '') + path;
+    const fullUrl = baseUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '') + path;
 
     const response = await api.request({
       method,
@@ -144,10 +177,22 @@ export async function apiCall<T>(
   }
 }
 
-export function onUnauthorized(handler: any) { return () => { }; }
-export function onServerError(handler: any) { return () => { }; }
+// CRITICAL FIX: onUnauthorized and onServerError now actually store handlers
+export function onUnauthorized(handler: () => void) { 
+  _unauthorizedHandler = handler;
+  return () => { _unauthorizedHandler = null; };
+}
+
+export function onServerError(handler: (error: ApiError) => void) { 
+  _serverErrorHandler = handler;
+  return () => { _serverErrorHandler = null; };
+}
+
 export function cancelRequest(key: string) { }
-export async function verifyBackendReachable(timeoutMs = 2000) { return getApiBaseUrl(); }
+
+export async function verifyBackendReachable(timeoutMs = 2000) { 
+  return getApiBaseUrl(); 
+}
 
 export const authApi = {
   login: (email: string, password: string) =>
@@ -253,8 +298,8 @@ export const adminTaskTemplateApi = {
 };
 
 export const commentApi = {
-  destroyAsAdmin: (commentId: number) => apiCall<void>('DELETE', `/admin/comments/${commentId}`, undefined, { dedupe: false }),
-  destroyAsEmployee: (commentId: number) => apiCall<void>('DELETE', `/employee/comments/${commentId}`, undefined, { dedupe: false }),
+  destroyAsAdmin: (commentId: number) => apiCall<void>('DELETE', `/api/admin/comments/${commentId}`, undefined, { dedupe: false }),
+  destroyAsEmployee: (commentId: number) => apiCall<void>('DELETE', `/api/employee/comments/${commentId}`, undefined, { dedupe: false }),
 };
 
 export const adminRequestApi = {

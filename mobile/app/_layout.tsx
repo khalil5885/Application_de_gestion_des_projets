@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useAppStore } from '../store/useAppStore';
+import { appStorage } from '../services/storage';
 
 export default function RootLayout() {
   const isDarkMode = useAppStore((s) => s.isDarkMode);
@@ -26,6 +27,17 @@ export default function RootLayout() {
     didHydrate.current = true;
     void hydrateAuth();
   }, [hydrateAuth]);
+
+  useEffect(() => {
+    const clearStaleUrl = async () => {
+      const stored = await appStorage.getItem('pm_api_base_url');
+      if (stored && (stored.includes('192.168.') || stored.includes('10.0.2.'))) {
+        await appStorage.removeItem('pm_api_base_url');
+        console.log('[startup] Cleared stale LAN URL:', stored);
+      }
+    };
+    clearStaleUrl();
+  }, []);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (state) => {

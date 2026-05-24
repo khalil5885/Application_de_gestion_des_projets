@@ -1,15 +1,14 @@
 import { Platform } from 'react-native';
-import { storage } from './storage';
+import { appStorage } from './storage';
 
-const DEVICE_IP = '192.168.1.120';
-const API_BASE_URL_KEY = 'pm_api_base_url';
+const NGROK_URL = 'https://gift-crisping-eagle.ngrok-free.dev';
+const LOCAL_URL = 'http://192.168.1.120'; // your laptop's local IP
 
 export async function getApiBaseUrl(): Promise<string> {
-  const manualUrl = await storage.get(API_BASE_URL_KEY);
+  const manualUrl = await appStorage.getItem(API_BASE_URL_KEY);
   if (manualUrl) {
-    let url = manualUrl.replace(/\/+$/, '');
-    if (!url.endsWith('/api')) url += '/api';
-    return url + '/';  // <-- ADD TRAILING SLASH
+    let url = manualUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '');
+    return url + '/api/';
   }
 
   if (process.env.EXPO_PUBLIC_API_URL) {
@@ -18,15 +17,7 @@ export async function getApiBaseUrl(): Promise<string> {
     return url + '/';
   }
 
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000/api/';
-  }
-
-  if (Platform.OS === 'ios') {
-    return 'http://localhost:8000/api/';
-  }
-
-  return `http://${DEVICE_IP}:8000/api/`;
+  return `${NGROK_URL}/api/`;
 }
 
 export async function getHealthCheckUrl(): Promise<string> {
@@ -36,18 +27,18 @@ export async function getHealthCheckUrl(): Promise<string> {
 
 export async function setManualApiBaseUrl(url: string) {
   if (!url) {
-    await storage.remove(API_BASE_URL_KEY);
+    await appStorage.removeItem(API_BASE_URL_KEY);
     return getApiBaseUrl();
   }
   const cleanUrl = url.replace(/\/+$/, '').replace(/\/api$/, '');
-  await storage.set(API_BASE_URL_KEY, cleanUrl);
+  await appStorage.setItem(API_BASE_URL_KEY, cleanUrl);
   return cleanUrl;
 }
 
 export async function clearManualApiBaseUrl() {
-  await storage.remove(API_BASE_URL_KEY);
+  await appStorage.removeItem(API_BASE_URL_KEY);
 }
 
 export function getCachedApiBaseUrl() {
-  return process.env.EXPO_PUBLIC_API_URL || `http://${DEVICE_IP}:8000`;
+  return process.env.EXPO_PUBLIC_API_URL || NGROK_URL;
 }

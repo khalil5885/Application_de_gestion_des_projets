@@ -12,11 +12,13 @@ import {
   clientApi,
   employeeApi,
   notificationApi,
-  onServerError,
   onUnauthorized,
+  onServerError,
   setAuthToken,
   verifyBackendReachable,
+  api,
 } from '../services/api';
+import { getApiBaseUrl } from '../services/apiConfig';
 import { appStorage } from '../services/storage';
 import {
   AdminDashboardStats,
@@ -465,12 +467,30 @@ export const useAppStore = create<AppStore>()(
             const response = await authApi.login(email, password);
             if (!response.token) throw new Error('Login succeeded but no auth token was returned.');
 
+            // Set in memory first
             setAuthToken(response.token);
-            await appStorage.setItem(TOKEN_KEY, response.token);
+            console.log('[login] setAuthToken called with:', response.token.substring(0, 20));
+
+            // Write to storage (best effort, don't await before me())
+            appStorage.setItem(TOKEN_KEY, response.token).catch(console.error);
+
+            // Small yield to let the event loop settle on native
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // DEBUG: hit user-debug instead of /api/user
+            const baseUrl = await getApiBaseUrl();
+            const debugUrl = baseUrl.replace(/\/api\/?$/, '') + '/api/user-debug';
+            console.log('[DEBUG] hitting:', debugUrl);
+            console.log('[DEBUG] token being used:', response.token.substring(0, 30));
+
+            const debugResponse = await api.get(debugUrl);
+            console.log('[DEBUG] user-debug response:', JSON.stringify(debugResponse.data));
 
             try {
+              // Now call me() — _token is already set so interceptor uses it synchronously
               return normalizeUser(await authApi.me());
             } catch (error) {
+              // Rollback on failure
               await appStorage.removeItem(TOKEN_KEY);
               setAuthToken(null);
               throw error;
@@ -494,6 +514,7 @@ export const useAppStore = create<AppStore>()(
             return;
           }
 
+          // CRITICAL FIX: Set token BEFORE authApi.me() so the interceptor can use it
           setAuthToken(token);
           const user = normalizeUser(await authApi.me());
           set({ isLoggedIn: true, currentUser: user, isHydratingAuth: false });
@@ -960,6 +981,7 @@ export const useAppStore = create<AppStore>()(
   )
 );
 
+// CRITICAL FIX: Register handlers AFTER store creation so they can call store methods
 onUnauthorized(() => {
   void useAppStore.getState().forceLogout('Your session expired. Please sign in again.');
 });
