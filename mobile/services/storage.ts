@@ -40,6 +40,7 @@ export const storage = {
   get: async (key: string): Promise<string | null> => {
     try {
       if (isWeb) {
+        if (typeof window === 'undefined') return memoryStore.get(key) ?? null;
         return window.localStorage?.getItem(key) ?? null;
       }
       try {

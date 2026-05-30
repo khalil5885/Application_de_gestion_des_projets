@@ -478,14 +478,7 @@ export const useAppStore = create<AppStore>()(
             await new Promise(resolve => setTimeout(resolve, 50));
 
             // DEBUG: hit user-debug instead of /api/user
-            const baseUrl = await getApiBaseUrl();
-            const debugUrl = baseUrl.replace(/\/api\/?$/, '') + '/api/user-debug';
-            console.log('[DEBUG] hitting:', debugUrl);
-            console.log('[DEBUG] token being used:', response.token.substring(0, 30));
-
-            const debugResponse = await api.get(debugUrl);
-            console.log('[DEBUG] user-debug response:', JSON.stringify(debugResponse.data));
-
+           
             try {
               // Now call me() — _token is already set so interceptor uses it synchronously
               return normalizeUser(await authApi.me());

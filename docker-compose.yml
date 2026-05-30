@@ -1,15 +1,17 @@
-version: '3.8'
 services:
-  # The Backend API
   laravel:
     build: ./backend
     container_name: khalil-backend
     restart: unless-stopped
     env_file: ./backend/.env
+    ports:
+      - "8000:8000"
     networks:
       - saas-network
+    depends_on:
+      db:
+        condition: service_healthy   # ← waits for MySQL to be ready
 
-  # The React Frontend
   react:
     build: ./frontend
     container_name: khalil-frontend
@@ -17,18 +19,26 @@ services:
       - "3000:3000"
     networks:
       - saas-network
+    depends_on:
+      - laravel
 
-  # The Database
   db:
     image: mysql:8.0
     container_name: khalil-db
+    restart: unless-stopped
     environment:
       MYSQL_DATABASE: khalil_pro
+      MYSQL_ROOT_PASSWORD: root
       MYSQL_PASSWORD: root
     volumes:
       - mysql-data:/var/lib/mysql
     networks:
       - saas-network
+    healthcheck:                          # ← add this
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 networks:
   saas-network:

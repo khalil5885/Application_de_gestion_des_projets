@@ -145,8 +145,7 @@ export async function apiCall<T>(
 ): Promise<T> {
   try {
     const baseUrl = await getApiBaseUrl();
-    const fullUrl = baseUrl.replace(/\/api\/?$/, '').replace(/\/+$/, '') + path;
-
+   const fullUrl = baseUrl.replace(/\/+$/, '') + path;
     const response = await api.request({
       method,
       url: fullUrl,
