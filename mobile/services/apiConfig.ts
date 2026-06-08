@@ -4,7 +4,7 @@ import { appStorage } from './storage';
 const API_BASE_URL_KEY = 'pm_api_base_url';
 
 // Change this to your PC's local IP
-const LOCAL_URL = 'http://192.168.1.15:8000';
+const LOCAL_URL = 'http://192.168.1.140:8000';
 
 export async function getApiBaseUrl(): Promise<string> {
   const manualUrl = await appStorage.getItem(API_BASE_URL_KEY);

@@ -24,6 +24,7 @@ import {
   cilClock,
   cilCommentBubble,
   cilGraph,
+  cilLightbulb,
   cilList,
   cilReload,
   cilTask,
@@ -44,7 +45,6 @@ const eventConfig = {
   in_progress: { color: 'primary', tone: '#0891b2', label: 'In Progress' },
   ready_for_review: { color: 'info', tone: '#06b6d4', label: 'Ready Review' },
   high_priority: { color: 'danger', tone: '#dc2626', label: 'High Priority' },
-  extension_pending: { color: 'warning', tone: '#d97706', label: 'Extension' },
   project_deadline: { color: 'warning', tone: '#d97706', label: 'Project' },
   todo: { color: 'secondary', tone: '#64748b', label: 'To Do' },
   on_hold: { color: 'warning', tone: '#d97706', label: 'Blocked' },
@@ -213,6 +213,8 @@ const Calendar = () => {
   const [productivity, setProductivity] = useState({})
   const [activity, setActivity] = useState([])
   const [notifications, setNotifications] = useState([])
+  const [suggestedOrder, setSuggestedOrder] = useState(null)
+  const [suggesting, setSuggesting] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -245,10 +247,27 @@ const Calendar = () => {
     }
   }, [dateRange])
 
+  const fetchSuggestion = useCallback(async () => {
+    setSuggesting(true)
+    try {
+      const res = await api.get('/api/employee/tasks/suggest-order')
+      setSuggestedOrder(res.data?.data || [])
+    } catch (err) {
+      console.error('Suggestion failed:', err)
+      setSuggestedOrder([])
+    } finally {
+      setSuggesting(false)
+    }
+  }, [])
+
   useEffect(() => {
     const timer = window.setTimeout(fetchWorkspace, 0)
     return () => window.clearTimeout(timer)
   }, [fetchWorkspace])
+
+  useEffect(() => {
+    fetchSuggestion()
+  }, [fetchSuggestion])
 
   const calendarDays = useMemo(() => {
     const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay()
@@ -402,7 +421,7 @@ const Calendar = () => {
                         {MONTHS[currentDate.getMonth()]} {currentDate.getFullYear()}
                       </div>
                       <div className="small text-body-secondary">
-                        Tasks, project deadlines, reviews, and extension requests
+                        Tasks, project deadlines, reviews, and milestones
                       </div>
                     </div>
                     <CButtonGroup size="sm">
@@ -553,24 +572,62 @@ const Calendar = () => {
 
           <CRow className="g-3 mb-4">
             <CCol xs={12} lg={4}>
-              <CCard className="h-100">
-                <CCardHeader>
-                  <div className="fw-semibold">Today's Focus</div>
-                  <div className="small text-body-secondary fw-normal mt-1">
-                    Priority, overdue, review, and blocked work
+              <CCard className="h-100 border-primary">
+                <CCardHeader className="bg-primary text-white">
+                  <div className="d-flex justify-content-between align-items-center gap-3">
+                    <div>
+                      <div className="fw-semibold">
+                        <CIcon icon={cilLightbulb} className="me-2" />
+                        Smart Focus
+                      </div>
+                      <div className="small opacity-75">AI-prioritized for today</div>
+                    </div>
+                    <CButton
+                      color="light"
+                      size="sm"
+                      variant="outline"
+                      onClick={fetchSuggestion}
+                      disabled={suggesting}
+                    >
+                      {suggesting ? <CSpinner size="sm" /> : <CIcon icon={cilReload} />}
+                    </CButton>
                   </div>
                 </CCardHeader>
                 <CCardBody>
-                  {workspace.today_focus?.length ? (
-                    <div className="d-flex flex-column gap-3">
-                      {workspace.today_focus.map((task) => (
-                        <TaskSummaryItem key={task.id} task={task} onOpen={openTask} />
-                      ))}
+                  {suggesting ? (
+                    <div className="text-center py-3">
+                      <CSpinner size="sm" className="me-2" />
+                      Analyzing your tasks...
+                    </div>
+                  ) : !suggestedOrder?.length ? (
+                    <div className="workspace-empty-state">
+                      <CIcon icon={cilTask} />
+                      <span>No suggestions available.</span>
                     </div>
                   ) : (
-                    <div className="workspace-empty-state">
-                      <CIcon icon={cilCheckCircle} />
-                      <span>No urgent focus tasks right now.</span>
+                    <div className="d-flex flex-column gap-3">
+                      {suggestedOrder.slice(0, 5).map((item, idx) => (
+                        <button
+                          key={item.id}
+                          className="workspace-task-row text-start"
+                          onClick={() => openTask({ id: item.id, title: item.title })}
+                        >
+                          <div className="d-flex align-items-start gap-3">
+                            <div
+                              className={`badge bg-${idx === 0 ? 'danger' : idx === 1 ? 'warning' : 'secondary'} rounded-pill`}
+                              style={{ minWidth: 28 }}
+                            >
+                              #{idx + 1}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="fw-semibold text-truncate">
+                                {item.title || `Task #${item.id}`}
+                              </div>
+                              <div className="small text-body-secondary">{item.reason}</div>
+                            </div>
+                          </div>
+                        </button>
+                      ))}
                     </div>
                   )}
                 </CCardBody>

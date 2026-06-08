@@ -8,7 +8,7 @@ const SetupPassword = React.lazy(() => import('./views/pages/setup-password/Setu
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const NotificationsPage = React.lazy(() => import('./views/shared/NotificationsPage'))
 const UserManagement = React.lazy(() => import('./views/admin/UserManagement'))
-const RequestManagement = React.lazy(() => import('./views/admin/RequestManagement'))
+// const RequestManagement = React.lazy(() => import('./views/admin/RequestManagement'))
 const WorkloadOverview = React.lazy(() => import('./views/admin/workload/WorkloadOverview'))
 const EmployeeWorkloadDetail = React.lazy(
   () => import('./views/admin/workload/EmployeeWorkloadDetail'),
@@ -16,12 +16,15 @@ const EmployeeWorkloadDetail = React.lazy(
 const ProjectManagement = React.lazy(() => import('./views/admin/project/ProjectManagement'))
 const ProjectDetail = React.lazy(() => import('./views/admin/project/ProjectDetail'))
 const TaskManagement = React.lazy(() => import('./views/admin/project/TaskManagement'))
-const TaskTemplatesPage = React.lazy(() => import('./views/admin/project/TaskTemplatesPage.jsx'))
+// const TaskTemplatesPage = React.lazy(() => import('./views/admin/project/TaskTemplatesPage.jsx'))
 const ProjectTypesPage = React.lazy(() => import('./views/admin/project/ProjectTypesPage'))
 const TasksPage = React.lazy(() => import('./views/admin/TasksOverview'))
-
+const ProjectManagementPage = React.lazy(() => import('./views/employee/project/ProjectManagement'))
 const EmployeeTaskDashboard = React.lazy(
   () => import('./views/employee/tasks/EmployeeTaskDashboard'),
+)
+const EmployeeProjectManagement = React.lazy(
+  () => import('./views/employee/project/ProjectManagement'),
 )
 
 const ClientProjects = React.lazy(() => import('./views/client/Projects'))
@@ -73,11 +76,11 @@ const routes = [
   },
 
   { path: '/admin/users', name: 'User Management', element: withRoles(UserManagement, ['admin']) },
-  {
-    path: '/admin/requests',
-    name: 'Request Management',
-    element: withRoles(RequestManagement, ['admin']),
-  },
+  // {
+  //   path: '/admin/requests',
+  //   name: 'Request Management',
+  //   element: withRoles(RequestManagement, ['admin']),
+  // },
   {
     path: '/admin/workload',
     name: 'Team Workload',
@@ -108,20 +111,31 @@ const routes = [
     name: 'Project Types',
     element: withRoles(ProjectTypesPage, ['admin']),
   },
-  {
-    path: '/admin/task-templates',
-    name: 'Task Templates',
-    element: withRoles(TaskTemplatesPage, ['admin']),
-  },
+  // {
+  //   path: '/admin/task-templates',
+  //   name: 'Task Templates',
+  //   element: withRoles(TaskTemplatesPage, ['admin']),
+  // },
   {
     path: '/admin/tasks',
     name: 'Tasks',
     element: withRoles(TasksPage, ['admin']),
   },
+  
+  {
+    path: '/employee/projects',
+    name: 'All Projects',
+    element: withRoles(ProjectManagementPage, ['employee']),
+  },
   {
     path: '/employee/tasks',
     name: 'My Tasks',
     element: withRoles(EmployeeTaskDashboard, ['employee']),
+  },
+  {
+    path: '/employee/projects',
+    name: 'My Projects',
+    element: withRoles(EmployeeProjectManagement, ['employee']),
   },
   {
     path: '/client/dashboard',

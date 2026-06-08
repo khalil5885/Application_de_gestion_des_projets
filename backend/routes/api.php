@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum', 'role:admin'])
 Route::middleware(['auth:sanctum', 'role:employee'])
     ->prefix('employee')
     ->group(function () {
+        
         Route::get('/dashboard', [EmployeeDashboardController::class, 'index']);
         Route::get('/workspace/calendar', [EmployeeWorkspaceController::class, 'calendar']);
         Route::get('/workspace/activity', [EmployeeWorkspaceController::class, 'activity']);
@@ -119,7 +120,7 @@ Route::middleware(['auth:sanctum', 'role:employee'])
 
         Route::get('/projects', [EmployeeProjectController::class, 'index']);
         Route::get('/projects/{project}', [EmployeeProjectController::class, 'show']);
-
+        Route::get('/tasks/{task}', [EmployeeTaskController::class, 'show']);
         Route::get('/tasks', [EmployeeTaskController::class, 'index']);
         Route::patch('/tasks/{task}/mark-ready', [EmployeeTaskController::class, 'markReadyForReview']);
         Route::patch('/tasks/{task}/status', [EmployeeTaskController::class, 'updateStatus']);

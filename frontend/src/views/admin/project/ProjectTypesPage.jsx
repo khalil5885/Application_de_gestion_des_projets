@@ -165,7 +165,7 @@ const TemplateRow = ({ template, onSave, onDelete }) => {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: 10, fontWeight: 800, marginTop: 2,
       }}>
-        {template.order + 1}
+        {template.order }
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
@@ -203,7 +203,7 @@ const TemplateRow = ({ template, onSave, onDelete }) => {
 
 const NewTemplateForm = ({ projectTypeId, nextOrder, onCreated }) => {
   const [open, setOpen]     = useState(false)
-  const blank = () => ({ name: '', description: '', default_due_days: '', order: nextOrder })
+  const blank = () => ({ name: '', description: '', default_due_days: '', order: nextOrder|| 1  })
   const [form, setForm]     = useState(blank)
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState(null)
@@ -219,7 +219,7 @@ const NewTemplateForm = ({ projectTypeId, nextOrder, onCreated }) => {
         name:             form.name.trim(),
         description:      form.description || null,
         default_due_days: form.default_due_days ? parseInt(form.default_due_days) : null,
-        order:            parseInt(form.order) >= 0 ? parseInt(form.order) : nextOrder,
+        order:            parseInt(form.order) >= 1 ? parseInt(form.order) : (nextOrder || 1),
         project_type_id:  projectTypeId,
       })
       setForm(blank)
@@ -296,7 +296,7 @@ const NewTemplateForm = ({ projectTypeId, nextOrder, onCreated }) => {
         <div style={{ flex: 1 }}>
           <label style={labelStyle}>Order</label>
           <input
-            type="number" min={0}
+            type="number" min={1}
             value={form.order}
             onChange={e => setForm(f => ({ ...f, order: e.target.value }))}
             style={inputStyle}
@@ -450,7 +450,7 @@ const TemplateDrawer = ({ projectType, onClose }) => {
         }}>
           <NewTemplateForm
             projectTypeId={projectType.id}
-            nextOrder={templates.length}
+            nextOrder={templates.length+ 1}
             onCreated={fetchTemplates}
           />
         </div>

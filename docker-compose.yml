@@ -6,17 +6,23 @@ services:
     env_file: ./backend/.env
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend:/var/www
+      - /var/www/vendor  # keep vendor from the image, don't overwrite it
     networks:
       - saas-network
     depends_on:
       db:
-        condition: service_healthy   # ← waits for MySQL to be ready
+        condition: service_healthy
 
   react:
     build: ./frontend
     container_name: khalil-frontend
     ports:
       - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules  # keep node_modules from the image, don't overwrite it
     networks:
       - saas-network
     depends_on:
@@ -26,6 +32,8 @@ services:
     image: mysql:8.0
     container_name: khalil-db
     restart: unless-stopped
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_DATABASE: khalil_pro
       MYSQL_ROOT_PASSWORD: root
@@ -34,7 +42,7 @@ services:
       - mysql-data:/var/lib/mysql
     networks:
       - saas-network
-    healthcheck:                          # ← add this
+    healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
       interval: 5s
       timeout: 5s

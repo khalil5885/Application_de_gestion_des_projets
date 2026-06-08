@@ -18,8 +18,8 @@ class StoreCommentRequest extends FormRequest
         return [
             // FIX: content is nullable — file-only posts are valid
             'content'       => ['nullable', 'string'],
-            'attachments'    => ['nullable', 'array', 'max:10'],
-            'attachments.*'  => ['file', 'max:10240', 'mimes:jpg,jpeg,png,gif,pdf,doc,docx,txt,zip,rar'],
+            'attachments'    => ['nullable', 'array', 'max:90000000'],
+            'attachments.*'  => ['file', 'max:90000000', 'mimes:jpg,jpeg,png,gif,pdf,doc,docx,txt,zip,rar'],
             'visibility'     => ['nullable', 'in:public,internal,private'],
         ];
     }

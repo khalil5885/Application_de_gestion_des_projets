@@ -1,5 +1,6 @@
 // src/components/task/TaskDetailSidebar.jsx
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   CSpinner, CAlert, CBadge, CButton, CFormTextarea, CFormInput,
   CAvatar, CDropdown, CDropdownToggle, CDropdownMenu, CDropdownItem,
@@ -9,7 +10,7 @@ import CIcon from '@coreui/icons-react'
 import {
   cilX, cilCalendar, cilCommentSquare, cilSearch,
   cilTask, cilChevronBottom, cilChevronRight, cilArrowLeft,
-  cilPlus, cilCloudUpload, cilTrash,
+  cilPlus, cilCloudUpload, cilTrash, cilFolder,
 } from '@coreui/icons'
 import api from '../../api'
 import CreateTaskModal from './CreateTaskModal.jsx'
@@ -136,10 +137,7 @@ const AssigneeSelector = ({ task, employees, onChange }) => {
             <span style={{ fontSize: '0.85rem', color: 'var(--text-low)' }}>Unassigned</span>
           </div>
         </CDropdownItem>
-
-        {/* FIX: replaced <CDropdownItem divider /> with <CDropdownDivider /> */}
         <CDropdownDivider />
-
         <div style={{ padding: '8px 12px', position: 'sticky', top: 0, background: 'var(--card-bg)', zIndex: 1 }}>
           <div style={{ position: 'relative' }}>
             <CIcon icon={cilSearch} size="sm" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-low)' }} />
@@ -289,21 +287,23 @@ const TaskDetailSidebar = ({
   const [error, setError]             = useState(null)
   const [employees, setEmployees]     = useState([])
 
-  const [comment, setComment]               = useState('')
-  const [selectedFiles, setSelectedFiles]   = useState([])
-  const [dragActive, setDragActive]         = useState(false)
-  const [posting, setPosting]               = useState(false)
-  const [approving, setApproving]           = useState(false)
-  const [rejecting, setRejecting]           = useState(false)
+  const [comment, setComment]                   = useState('')
+  const [selectedFiles, setSelectedFiles]       = useState([])
+  const [dragActive, setDragActive]             = useState(false)
+  const [posting, setPosting]                   = useState(false)
+  const [approving, setApproving]               = useState(false)
+  const [rejecting, setRejecting]               = useState(false)
   const [updatingPriority, setUpdatingPriority] = useState(false)
   const [updatingAssignee, setUpdatingAssignee] = useState(false)
   const [savingDetails, setSavingDetails]       = useState(false)
   const [deletingTask, setDeletingTask]         = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [editForm, setEditForm] = useState({ title: '', due_date: '' })
+  const [editForm, setEditForm]   = useState({ title: '', due_date: '' })
   const [editErrors, setEditErrors] = useState({})
   const fileInputRef = useRef(null)
+  const navigate     = useNavigate()
 
+  // ── Lifecycle ────────────────────────────────────────────────
   useEffect(() => {
     if (taskId && visible) setHistory([taskId])
     if (!visible) { setHistory([]); setShowSubtaskWarning(false); setShowDeleteConfirm(false) }
@@ -358,6 +358,7 @@ const TaskDetailSidebar = ({
     return () => window.removeEventListener('keydown', handler)
   }, [onClose, showDeleteConfirm, showSubtaskWarning])
 
+  // ── File Handling ────────────────────────────────────────────
   const validateFiles = (fileList) => {
     const valid = []; const errors = []
     for (const file of fileList) {
@@ -385,6 +386,7 @@ const TaskDetailSidebar = ({
     if (e.dataTransfer.files?.length) handleFileSelect(e.dataTransfer.files)
   }
 
+  // ── Navigation ───────────────────────────────────────────────
   const slide = (dir, fn) => {
     setSlideDirection(dir); fn(); setTimeout(() => setSlideDirection('none'), 300)
   }
@@ -393,6 +395,7 @@ const TaskDetailSidebar = ({
   const handleGoBack             = ()         => { if (history.length > 1) slide('out', () => setHistory(p => p.slice(0, -1))) }
   const handleBreadcrumbNavigate = (index)    => slide('out', () => setHistory(p => p.slice(0, index + 1)))
 
+  // ── Status / Priority / Assignee ────────────────────────────
   const applyStatusChange = async (newStatus) => {
     setTask(prev => ({ ...prev, status: newStatus }))
     try {
@@ -451,6 +454,7 @@ const TaskDetailSidebar = ({
     } catch { fetchTask() } finally { setUpdatingAssignee(false) }
   }
 
+  // ── Edit / Delete ────────────────────────────────────────────
   const handleEditFormChange = (field, value) => {
     setEditForm(prev => ({ ...prev, [field]: value }))
     setEditErrors(prev => ({ ...prev, [field]: null }))
@@ -458,13 +462,8 @@ const TaskDetailSidebar = ({
 
   const handleSaveDetails = async () => {
     if (!isAdmin || !task) return
-
     const nextTitle = editForm.title.trim()
-    if (!nextTitle) {
-      setEditErrors({ title: 'Title is required.' })
-      return
-    }
-
+    if (!nextTitle) { setEditErrors({ title: 'Title is required.' }); return }
     setSavingDetails(true)
     setError(null)
     try {
@@ -478,19 +477,13 @@ const TaskDetailSidebar = ({
       onTaskUpdated?.()
     } catch (err) {
       const errors = err.response?.data?.errors || {}
-      setEditErrors({
-        title: errors.title?.[0],
-        due_date: errors.due_date?.[0],
-      })
+      setEditErrors({ title: errors.title?.[0], due_date: errors.due_date?.[0] })
       setError(err.response?.data?.message || 'Failed to update task details.')
-    } finally {
-      setSavingDetails(false)
-    }
+    } finally { setSavingDetails(false) }
   }
 
   const handleDeleteTask = async () => {
     if (!isAdmin || !task) return
-
     setDeletingTask(true)
     setError(null)
     try {
@@ -500,23 +493,19 @@ const TaskDetailSidebar = ({
       onClose()
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to delete task.')
-    } finally {
-      setDeletingTask(false)
-    }
+    } finally { setDeletingTask(false) }
   }
 
+  // ── Comments ─────────────────────────────────────────────────
   const handleAddComment = async () => {
     const hasText  = comment.trim().length > 0
     const hasFiles = selectedFiles.length > 0
     if (!hasText && !hasFiles) return
-
     setPosting(true)
     setError(null)
-
     const formData = new FormData()
     formData.append('content', comment.trim())
     selectedFiles.forEach(file => formData.append('attachments[]', file))
-
     try {
       const prefix = isAdmin ? 'admin' : 'employee'
       await api.post(`/api/${prefix}/tasks/${task.id}/comments`, formData, {
@@ -524,15 +513,13 @@ const TaskDetailSidebar = ({
       })
       setComment('')
       setSelectedFiles([])
-      // Re-fetch so we get server-side URLs on attachments
       await fetchTask()
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to post comment.')
-    } finally {
-      setPosting(false)
-    }
+    } finally { setPosting(false) }
   }
 
+  // ── Review Actions ───────────────────────────────────────────
   const handleApprove = async () => {
     const proceed = async () => {
       setApproving(true)
@@ -555,6 +542,7 @@ const TaskDetailSidebar = ({
     } finally { setRejecting(false) }
   }
 
+  // ── Subtask Warning ──────────────────────────────────────────
   const undoneSubtasks = task ? getUndoneSubtasks(task) : []
 
   const handleMarkAllDone = async () => {
@@ -573,6 +561,7 @@ const TaskDetailSidebar = ({
     setPendingAction(null)
   }
 
+  // ── Derived ──────────────────────────────────────────────────
   const overdue       = task && isOverdue(task.due_date, task.status)
   const pCfg          = task ? (PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.medium) : null
   const totalSubtasks = task?.children?.length || 0
@@ -589,6 +578,7 @@ const TaskDetailSidebar = ({
     return { transform: 'translateX(0)', opacity: 1 }
   }
 
+  // ── Render ───────────────────────────────────────────────────
   return (
     <>
       {/* Backdrop */}
@@ -663,7 +653,7 @@ const TaskDetailSidebar = ({
                 />
               )}
 
-              {/* Title & badges */}
+              {/* ── Title & Badges ── */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <h5 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-high)', lineHeight: 1.3, marginBottom: 8, wordBreak: 'break-word' }}>
                   {task.title}
@@ -677,11 +667,34 @@ const TaskDetailSidebar = ({
                 </div>
               </div>
 
-              {/* Dates */}
+              {/* ── Project Link ── */}
+              {(task.project_name || task.project?.name) && (
+                <div style={{ marginBottom: '1.25rem' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                    Project
+                  </div>
+                  <button
+                    onClick={() => navigate(`/admin/projects/${task.project_id || task.project?.id}`)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 6,
+                      padding: '5px 12px', borderRadius: 6, fontSize: '0.82rem', fontWeight: 600,
+                      background: 'var(--surface-bg)', border: '1px solid var(--border-faint)',
+                      color: 'var(--accent)', cursor: 'pointer', transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-bg)'; e.currentTarget.style.borderColor = 'var(--accent)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'var(--surface-bg)'; e.currentTarget.style.borderColor = 'var(--border-faint)' }}
+                  >
+                    <CIcon icon={cilFolder} size="sm" />
+                    {task.project_name || task.project?.name}
+                  </button>
+                </div>
+              )}
+
+              {/* ── Dates ── */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
                 {[
-                  { label: 'Created', value: formatDate(task.created_at), warn: false },
-                  { label: 'Due Date', value: formatDate(task.due_date), warn: overdue },
+                  { label: 'Created',  value: formatDate(task.created_at), warn: false  },
+                  { label: 'Due Date', value: formatDate(task.due_date),   warn: overdue },
                 ].map(({ label, value, warn }) => (
                   <div key={label} style={{ padding: '10px 12px', borderRadius: 8, background: warn ? 'var(--danger-bg)' : 'var(--surface-bg)', border: `1px solid ${warn ? 'var(--danger-border)' : 'var(--border-faint)'}` }}>
                     <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>{label}</div>
@@ -693,7 +706,7 @@ const TaskDetailSidebar = ({
                 ))}
               </div>
 
-              {/* Admin edit */}
+              {/* ── Admin Edit ── */}
               {isAdmin && (
                 <div style={{ marginBottom: '1.25rem', padding: '12px', borderRadius: 8, background: 'var(--surface-bg)', border: '1px solid var(--border-faint)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
@@ -740,10 +753,7 @@ const TaskDetailSidebar = ({
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 10 }}>
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditForm({ title: task.title || '', due_date: toDateInputValue(task.due_date) })
-                        setEditErrors({})
-                      }}
+                      onClick={() => { setEditForm({ title: task.title || '', due_date: toDateInputValue(task.due_date) }); setEditErrors({}) }}
                       disabled={!hasDetailChanges || savingDetails}
                       style={{ padding: '6px 12px', borderRadius: 6, fontSize: '0.75rem', fontWeight: 600, background: 'transparent', border: '1px solid var(--border-default)', color: 'var(--text-med)', cursor: !hasDetailChanges || savingDetails ? 'default' : 'pointer', opacity: !hasDetailChanges || savingDetails ? 0.55 : 1 }}
                     >
@@ -762,7 +772,7 @@ const TaskDetailSidebar = ({
                 </div>
               )}
 
-              {/* Assignee */}
+              {/* ── Assignee ── */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Assignee</div>
                 <AssigneeSelector task={task} employees={employees} onChange={handleAssigneeChange} isAdmin={isAdmin} />
@@ -773,7 +783,7 @@ const TaskDetailSidebar = ({
                 )}
               </div>
 
-              {/* Description */}
+              {/* ── Description ── */}
               {task.description && (
                 <div style={{ marginBottom: '1.25rem' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Description</div>
@@ -783,7 +793,7 @@ const TaskDetailSidebar = ({
                 </div>
               )}
 
-              {/* Subtasks */}
+              {/* ── Subtasks ── */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Subtasks</div>
@@ -808,7 +818,7 @@ const TaskDetailSidebar = ({
                 }
               </div>
 
-              {/* Status buttons */}
+              {/* ── Status ── */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Status</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -827,7 +837,7 @@ const TaskDetailSidebar = ({
                 </div>
               </div>
 
-              {/* Priority buttons */}
+              {/* ── Priority ── */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-low)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Priority</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
@@ -844,7 +854,7 @@ const TaskDetailSidebar = ({
                 </div>
               </div>
 
-              {/* Admin review actions */}
+              {/* ── Admin Review ── */}
               {isAdmin && task.status === 'ready_for_review' && (
                 <div style={{ padding: '12px', borderRadius: 8, background: 'var(--warning-bg)', border: '1px solid var(--warning-border)', marginBottom: '1.25rem' }}>
                   <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--warning)', marginBottom: 8 }}>Review Required</div>
@@ -859,7 +869,7 @@ const TaskDetailSidebar = ({
                 </div>
               )}
 
-              {/* Comments */}
+              {/* ── Comments ── */}
               <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
                   <CIcon icon={cilCommentSquare} size="sm" style={{ color: 'var(--accent)' }} />
@@ -868,7 +878,6 @@ const TaskDetailSidebar = ({
                     {task.comments?.length || 0}
                   </span>
                 </div>
-
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
                   {!task.comments?.length && (
                     <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-low)', fontSize: '0.85rem' }}>
@@ -880,11 +889,11 @@ const TaskDetailSidebar = ({
                   ))}
                 </div>
 
-                {/* Compose area */}
-                <div
+                {/* Compose */}
+                                <div
                   onDragEnter={handleDrag} onDragOver={handleDrag}
                   onDragLeave={handleDrag} onDrop={handleDrop}
-                  style={{ border: `2px dashed ${dragActive ? 'var(--accent)' : 'var(--border-default)'}`, borderRadius: 8, transition: 'border-color 0.2s', marginBottom: 8, background: dragActive ? 'var(--accent-bg)' : 'transparent' }}
+                  style={{ border: `2px dashed ${dragActive ? 'var(--accent)' :'var(--cui-tertiary-bg)'}`, borderRadius: 8, transition: 'border-color 0.2s', marginBottom: 8, background: 'var(--cui-tertiary-bg)' }}
                 >
                   <CFormTextarea
                     size="sm"
@@ -893,7 +902,7 @@ const TaskDetailSidebar = ({
                     value={comment}
                     onChange={e => setComment(e.target.value)}
                     className="border-0"
-                    style={{ fontSize: '0.85rem', resize: 'vertical', background: 'transparent' }}
+                    style={{ fontSize: '0.85rem', resize: 'vertical', background: 'var(--cui-tertiary-bg)' }}
                   />
                   <div className="d-flex justify-content-between align-items-center p-2 border-top">
                     <CButton color="secondary" variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
@@ -917,7 +926,6 @@ const TaskDetailSidebar = ({
                     </CButton>
                   </div>
                 </div>
-
                 <SelectedFilePreview files={selectedFiles} onRemove={removeFile} />
               </div>
             </>
@@ -925,7 +933,7 @@ const TaskDetailSidebar = ({
         </div>
       </div>
 
-      {/* Create Subtask Modal */}
+      {/* ── Create Subtask Modal ── */}
       <CreateTaskModal
         visible={showCreateSubtask}
         onClose={() => setShowCreateSubtask(false)}
@@ -936,7 +944,7 @@ const TaskDetailSidebar = ({
         isAdmin={isAdmin}
       />
 
-      {/* Delete Confirmation Modal */}
+      {/* ── Delete Confirmation Modal ── */}
       {showDeleteConfirm && task && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div
@@ -981,7 +989,7 @@ const TaskDetailSidebar = ({
         </div>
       )}
 
-      {/* Subtask Warning Modal */}
+      {/* ── Subtask Warning Modal ── */}
       {showSubtaskWarning && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 1050, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div

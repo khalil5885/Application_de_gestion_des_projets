@@ -134,20 +134,47 @@ class ProjectController extends Controller
         });
     }
 
-    public function estimate(Project $project, AiEstimationService $estimator)
-    {
-        return $this->handle(function () use ($project, $estimator) {
-            $estimate = $estimator->estimate($project);
-            $project->update($estimate);
+   public function estimate(Project $project, AiEstimationService $estimator)
+{
+    return $this->handle(function () use ($project, $estimator) {
+        // 1. Get the full estimate array (includes data_sent_to_ai and source)
+        $estimateResult = $estimator->estimate($project);
 
-            ActivityLog::record(request()->user(), 'project_ai_estimated', $project, 'AI project estimate generated.', $estimate);
+        // 2. Filter out ONLY the columns that belong to the projects table database
+        $databasePayload = array_intersect_key($estimateResult, array_flip([
+            'estimated_days', 
+            'risk_level', 
+            'ai_comment'
+        ]));
+        
+        // 3. Update the database safely
+        $project->update($databasePayload);
 
-            return $this->successResponse(
-                ProjectResource::make($project->fresh()->load(['client', 'projectType', 'members', 'rootTasks.children', 'comments.user'])),
-                'Project estimate generated successfully.'
-            );
-        });
-    }
+        // 4. Record the full log including debug data
+        ActivityLog::record(
+            request()->user(), 
+            'project_ai_estimated', 
+            $project, 
+            'AI project estimate generated.', 
+            $estimateResult
+        );
+
+        // 5. Build the final resource and manually inject the extra AI data strings
+        $resourceData = ProjectResource::make(
+            $project->fresh()->load(['client', 'projectType', 'members', 'rootTasks.children', 'comments.user'])
+        )->resolve(); // .resolve() turns the resource into a clean PHP array
+
+        $finalResponse = array_merge($resourceData, [
+            'source'          => $estimateResult['source'] ?? 'Unknown',
+            'data_sent_to_ai' => $estimateResult['data_sent_to_ai'] ?? []
+        ]);
+
+        return $this->successResponse(
+            $finalResponse,
+            'Project estimate generated successfully.'
+        );
+    });
+}
     public function finalizeReview(Request $request, Project $project)
 {
     return $this->handle(function () use ($request, $project) {

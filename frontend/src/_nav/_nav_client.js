@@ -33,12 +33,12 @@ const _nav = [
     icon: <CIcon icon={cilBell} customClassName="nav-icon" />,
     badgeKey: 'total',
   },
-  {
-    component: CNavItem,
-    name: 'Timeline',
-    to: '/client/timeline',
-    icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
-  },
+  // {
+  //   component: CNavItem,
+  //   name: 'Timeline',
+  //   to: '/client/timeline',
+  //   icon: <CIcon icon={cilCalendar} customClassName="nav-icon" />,
+  // },
 ]
 
 export default _nav

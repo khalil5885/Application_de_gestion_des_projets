@@ -20,13 +20,13 @@ import CIcon from '@coreui/icons-react'
 import { cilPlus } from '@coreui/icons'
 import api from '../../api'
 
-const STATUS_OPTIONS = [
-  { value: 'todo',             label: 'To Do' },
-  { value: 'in_progress',      label: 'In Progress' },
-  { value: 'ready_for_review', label: 'Ready for Review' },
-  { value: 'done',             label: 'Done' },
-  { value: 'on_hold',          label: 'On Hold' },
-]
+// const STATUS_OPTIONS = [
+//   { value: 'todo',             label: 'To Do' },
+//   { value: 'in_progress',      label: 'In Progress' },
+//   { value: 'ready_for_review', label: 'Ready for Review' },
+//   { value: 'done',             label: 'Done' },
+//   { value: 'on_hold',          label: 'On Hold' },
+// ]
 
 const initialForm = {
   name: '', description: '', status: 'todo',
@@ -152,12 +152,12 @@ const CreateProjectModal = ({ visible, onClose, onCreated }) => {
               {errors.end_date && <CFormFeedback invalid>{errors.end_date}</CFormFeedback>}
             </CCol>
 
-            <CCol md={12}>
+            {/* <CCol md={12}>
               <CFormLabel className="fw-medium small">Status</CFormLabel>
               <CFormSelect name="status" value={form.status} onChange={handleChange}>
                 {STATUS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </CFormSelect>
-            </CCol>
+            </CCol> */}
 
             <CCol md={12}>
               <CFormLabel className="fw-medium small">Description</CFormLabel>

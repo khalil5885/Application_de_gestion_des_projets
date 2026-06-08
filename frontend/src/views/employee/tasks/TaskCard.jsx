@@ -1,292 +1,200 @@
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
-  CCard,
-  CCardBody,
-  CBadge,
-  CButton,
-  CDropdown,
-  CDropdownToggle,
-  CDropdownMenu,
-  CDropdownItem,
-  CCollapse,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
+  CCard, CCardBody, CBadge, CButton, CCollapse,
+  CSpinner, CProgress,
+} from '@coreui/react';
+import CIcon from '@coreui/icons-react';
 import {
-  cilOptions,
-  cilChevronBottom,
-  cilChevronRight,
-  cilCommentSquare,
-  cilPaperclip,
-  cilTask,
-  cilCalendar,
-  cilExpandDown,
-  cilCheck,
-  cilMediaPlay,
-  cilX,
-} from '@coreui/icons'
-import TaskStatusBadge from './TaskStatusBadge'
-import PriorityDot from './PriorityDot'
-import ProgressBar from './ProgressBar'
-import RecursiveSubtaskTree from './RecursiveSubtaskTree'
-import TaskDetailModal from './TaskDetailModal'
-import { formatDueDate, calculateProgress, countAllSubtasks } from './utils/taskHelpers'
+  cilChevronBottom, cilChevronRight, cilCalendar, cilCheck,
+  cilMediaPlay, cilX, cilOptions,
+} from '@coreui/icons';
+import { formatDueDate, calculateProgress, countAllSubtasks } from './utils/taskHelpers';
+import { useUpdateTaskStatus } from './hooks/useUpdateTaskStatus';
+import RecursiveSubtaskTree from './RecursiveSubtaskTree';
 
-// Collect all task IDs in tree
-const getAllTaskIds = (task) => {
-  const ids = new Set()
-  const collect = (t) => {
-    ids.add(t.id)
-    t.children?.forEach(collect)
-  }
-  collect(task)
-  return ids
-}
+const TaskCard = ({ task, onTaskClick, onStatusChange }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [expandedIds, setExpandedIds] = useState(new Set());
+  const { updateStatus } = useUpdateTaskStatus();
 
-const TaskCard = ({ task, onStatusChange, onClick, onMarkReady }) => {
-  const [expanded, setExpanded] = useState(false)
-  const [expandedIds, setExpandedIds] = useState(new Set())
-  const [selectedSubtask, setSelectedSubtask] = useState(null)
-  const [subtaskModalVisible, setSubtaskModalVisible] = useState(false)
+  const dueInfo = formatDueDate(task.due_date);
+  const hasChildren = task.children && task.children.length > 0;
+  const progress = hasChildren ? calculateProgress(task) : null;
+  const subtaskCount = hasChildren ? countAllSubtasks(task) : 0;
+  const completedSubtasks = hasChildren
+    ? task.children.filter(c => c.status === 'done').length
+    : 0;
 
-  const dueInfo = formatDueDate(task.due_date)
-  const progress = calculateProgress(task)
-  const totalSubtasks = countAllSubtasks(task)
-  const hasChildren = task.children && task.children.length > 0
-  const allIds = hasChildren ? getAllTaskIds(task) : new Set()
-  const isAllExpanded = expanded && expandedIds.size === allIds.size
+  const handleStatusChange = async (newStatus) => {
+    setUpdatingStatus(true);
+    const result = await updateStatus(task.id, newStatus);
+    if (result.success) onStatusChange?.();
+    setUpdatingStatus(false);
+  };
 
-  const isTodo = task.status === 'todo'
-  const isInProgress = task.status === 'in_progress'
-  const isReadyForReview = task.status === 'ready_for_review'
-  const isDone = task.status === 'done'
-
-  const handleExpandAll = () => {
-    if (isAllExpanded) {
-      setExpanded(false)
-      setExpandedIds(new Set())
-    } else {
-      setExpanded(true)
-      setExpandedIds(new Set(allIds))
-    }
-  }
+  const handleSubtaskStatusChange = async (subtaskId, newStatus) => {
+    const result = await updateStatus(subtaskId, newStatus);
+    if (result.success) onStatusChange?.();
+  };
 
   const handleToggleExpand = (id) => {
-    const newSet = new Set(expandedIds)
-    if (newSet.has(id)) newSet.delete(id)
-    else newSet.add(id)
-    setExpandedIds(newSet)
-    if (newSet.size > 0 && !expanded) setExpanded(true)
-  }
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
-  const handleSubtaskClick = (subtask) => {
-    setSelectedSubtask(subtask)
-    setSubtaskModalVisible(true)
-  }
-
-  const handleSubtaskStatusChange = (subtaskId, newStatus) => {
-    // If the subtask detail modal is open and this is its task, update it
-    if (selectedSubtask?.id === subtaskId) {
-      setSelectedSubtask(prev => ({ ...prev, status: newStatus }))
-    }
-    onStatusChange?.(subtaskId, newStatus)
-  }
+  const isDone = task.status === 'done';
+  const isReady = task.status === 'ready_for_review';
+  const isInProgress = task.status === 'in_progress';
+  const isTodo = task.status === 'todo';
 
   return (
-    <>
-      <CCard
-        className="border-0 shadow-sm mb-3"
-        style={{
-          borderLeft: dueInfo.urgent ? '3px solid #ef4444' : '3px solid transparent',
-          transition: 'all 0.2s ease',
-        }}
-      >
-        <CCardBody className="p-4">
-          <div className="d-flex align-items-start gap-3">
-            <div className="flex-grow-1">
-
-              {/* Title & Actions */}
-              <div className="d-flex justify-content-between align-items-start mb-2">
-                <div
-                  className="cursor-pointer"
-                  onClick={() => onClick?.(task)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <h6 className={`fw-bold mb-1 ${isDone ? 'text-decoration-line-through text-muted' : ''}`}>
-                    {task.title}
-                  </h6>
-                  {task.project && (
-                    <span className="small text-primary" style={{ fontWeight: 500 }}>
-                      {task.project.name}
-                    </span>
-                  )}
-                </div>
-
-                <CDropdown alignment="end">
-                  <CDropdownToggle caret={false} color="transparent" className="p-1 border-0 shadow-none">
-                    <CIcon icon={cilOptions} className="text-muted" />
-                  </CDropdownToggle>
-                  <CDropdownMenu>
-                    <CDropdownItem onClick={() => onClick?.(task)}>
-                      <CIcon icon={cilTask} className="me-2" size="sm" />
-                      View Details
-                    </CDropdownItem>
-                    <CDropdownItem>
-                      <CIcon icon={cilCommentSquare} className="me-2" size="sm" />
-                      Add Comment
-                    </CDropdownItem>
-                  </CDropdownMenu>
-                </CDropdown>
-              </div>
-
-              {/* Meta Row */}
-              <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
-                <TaskStatusBadge status={task.status} />
-                <PriorityDot priority={task.priority} showLabel />
-                <div className="d-flex align-items-center gap-1 small text-muted">
-                  <CIcon icon={cilCalendar} size="sm" />
-                  <span style={{ color: dueInfo.color, fontWeight: dueInfo.urgent ? 600 : 400 }}>
-                    {dueInfo.text}
-                  </span>
-                </div>
-              </div>
-
-              {/* Description */}
-              {task.description && (
-                <p className="small text-muted mb-3" style={{ lineHeight: 1.5 }}>
-                  {task.description}
-                </p>
-              )}
-
-              {/* Progress Bar */}
-              {hasChildren && (
-                <div className="mb-3">
-                  <ProgressBar progress={progress} />
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="d-flex gap-2 mb-3">
-                {isTodo && (
-                  <CButton
-                    color="primary"
-                    size="sm"
-                    onClick={() => onStatusChange(task.id, 'in_progress')}
-                  >
-                    <CIcon icon={cilMediaPlay} size="sm" className="me-1" />
-                    Start Task
-                  </CButton>
-                )}
-
-                {isInProgress && (
-                  <CButton
-                    color="info"
-                    size="sm"
-                    onClick={() => onMarkReady?.(task)}
-                  >
-                    <CIcon icon={cilCheck} size="sm" className="me-1" />
-                    Submit for Review
-                  </CButton>
-                )}
-
-                {isReadyForReview && (
-                  <>
-                    <CBadge color="info" className="py-2 px-3">
-                      <CIcon icon={cilCheck} size="sm" className="me-1" />
-                      Pending Admin Review
-                    </CBadge>
-                    <CButton
-                      color="warning"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => onStatusChange?.(task.id, 'in_progress')}
-                    >
-                      <CIcon icon={cilX} size="sm" className="me-1" />
-                      Cancel Review
-                    </CButton>
-                  </>
-                )}
-
-                {isDone && (
-                  <CBadge color="success" className="py-2 px-3">
-                    <CIcon icon={cilCheck} size="sm" className="me-1" />
-                    Completed
-                  </CBadge>
-                )}
-              </div>
-
-              {/* Bottom Meta */}
-              <div className="d-flex align-items-center gap-3 small text-muted">
-                {hasChildren && (
-                  <>
-                    <button
-                      onClick={() => setExpanded(!expanded)}
-                      className="d-flex align-items-center gap-1 btn btn-sm p-0 border-0 bg-transparent text-muted"
-                    >
-                      <CIcon icon={expanded ? cilChevronBottom : cilChevronRight} size="sm" />
-                      {totalSubtasks} subtasks
-                    </button>
-
-                    <CButton
-                      color="link"
-                      size="sm"
-                      className="p-0 d-flex align-items-center gap-1 text-primary"
-                      onClick={handleExpandAll}
-                    >
-                      <CIcon icon={cilExpandDown} size="sm" />
-                      {isAllExpanded ? 'Collapse All' : 'Expand All'}
-                    </CButton>
-                  </>
-                )}
-
-                {task.comments?.length > 0 && (
-                  <span className="d-flex align-items-center gap-1">
-                    <CIcon icon={cilCommentSquare} size="sm" />
-                    {task.comments.length}
-                  </span>
-                )}
-
-                {task.attachments_count > 0 && (
-                  <span className="d-flex align-items-center gap-1">
-                    <CIcon icon={cilPaperclip} size="sm" />
-                    {task.attachments_count}
-                  </span>
-                )}
-              </div>
-            </div>
+    <CCard
+      className={`border-0 shadow-sm ${dueInfo.urgent ? 'border-start border-start-3 border-danger' : ''}`}
+    >
+      <CCardBody className="p-3 p-md-4">
+        {/* Header */}
+        <div className="d-flex justify-content-between align-items-start gap-2 mb-2">
+          <div className="flex-grow-1">
+            <h5
+              className={`fw-bold mb-1 ${isDone ? 'text-decoration-line-through text-muted' : ''}`}
+              style={{ cursor: 'pointer' }}
+              onClick={() => onTaskClick(task)}
+            >
+              {task.title}
+            </h5>
+            {task.project && (
+              <CBadge color="info" className="me-2" style={{ fontSize: '0.65rem' }}>
+                {task.project.name}
+              </CBadge>
+            )}
           </div>
+          <div className="d-flex gap-2 align-items-center flex-shrink-0">
+            {updatingStatus ? (
+              <CSpinner size="sm" />
+            ) : (
+              <CButton
+                color="transparent"
+                size="sm"
+                className="p-1"
+                onClick={() => onTaskClick(task)}
+                title="View details"
+              >
+                <CIcon icon={cilOptions} />
+              </CButton>
+            )}
+          </div>
+        </div>
 
-          {/* Expanded Subtasks */}
-          <CCollapse visible={expanded}>
-            {hasChildren && (
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid #f3f4f6' }}>
+        {/* Meta row */}
+        <div className="d-flex flex-wrap gap-3 mb-3 small">
+          <div className="d-flex align-items-center gap-1">
+            <CIcon icon={cilCalendar} size="sm" />
+            <span style={{ color: dueInfo.color, fontWeight: dueInfo.urgent ? 600 : 400 }}>
+              {dueInfo.text}
+            </span>
+          </div>
+          <CBadge
+            color={
+              task.priority === 'urgent' ? 'danger'
+              : task.priority === 'high' ? 'warning'
+              : 'secondary'
+            }
+            className="px-2"
+          >
+            {task.priority || 'medium'} priority
+          </CBadge>
+        </div>
+
+        {/* Description preview */}
+        {task.description && (
+          <p className="text-muted small mb-3" style={{ lineHeight: 1.4 }}>
+            {task.description.length > 120
+              ? task.description.slice(0, 120) + '…'
+              : task.description}
+          </p>
+        )}
+
+        {/* Progress bar */}
+        {hasChildren && progress !== null && (
+          <div className="mb-3">
+            <div className="d-flex justify-content-between small mb-1">
+              <span>Subtasks progress</span>
+              <span>{completedSubtasks}/{subtaskCount}</span>
+            </div>
+            <CProgress height={4} value={progress} color="success" />
+          </div>
+        )}
+
+        {/* Primary action button */}
+        <div className="mb-3">
+          {!isDone && (
+            <CButton
+              color={isReady ? 'secondary' : isInProgress ? 'info' : 'primary'}
+              size="sm"
+              onClick={
+                isReady
+                  ? () => handleStatusChange('in_progress')
+                  : isInProgress
+                  ? () => handleStatusChange('ready_for_review')
+                  : () => handleStatusChange('in_progress')
+              }
+              disabled={updatingStatus}
+            >
+              <CIcon
+                icon={isReady ? cilX : isInProgress ? cilCheck : cilMediaPlay}
+                size="sm"
+                className="me-1"
+              />
+              {isReady
+                ? 'Cancel Review'
+                : isInProgress
+                ? 'Submit for Review'
+                : 'Start Task'}
+            </CButton>
+          )}
+          {isTodo && !isInProgress && !isReady && !isDone && null /* already handled above */}
+          {isDone && (
+            <CBadge color="success" className="py-2 px-3">
+              ✓ Completed
+            </CBadge>
+          )}
+        </div>
+
+        {/* Subtasks toggle */}
+        {hasChildren && (
+          <div>
+            <CButton
+              color="link"
+              className="p-0 text-decoration-none"
+              onClick={() => setExpanded(!expanded)}
+            >
+              <CIcon icon={expanded ? cilChevronBottom : cilChevronRight} className="me-1" />
+              {subtaskCount} subtask{subtaskCount !== 1 ? 's' : ''}
+              {!expanded && completedSubtasks > 0 && ` (${completedSubtasks} done)`}
+            </CButton>
+
+            <CCollapse visible={expanded}>
+              <div className="mt-3 pt-2 border-top">
                 <RecursiveSubtaskTree
                   tasks={task.children}
+                  level={0}
                   onStatusChange={handleSubtaskStatusChange}
-                  onSubtaskClick={handleSubtaskClick}
+                  onSubtaskClick={(subtask) => onTaskClick(subtask)}
                   expandedIds={expandedIds}
                   onToggleExpand={handleToggleExpand}
                 />
               </div>
-            )}
-          </CCollapse>
-        </CCardBody>
-      </CCard>
+            </CCollapse>
+          </div>
+        )}
+      </CCardBody>
+    </CCard>
+  );
+};
 
-      {/* Subtask Detail Modal */}
-      {selectedSubtask && (
-        <TaskDetailModal
-          visible={subtaskModalVisible}
-          task={selectedSubtask}
-          onClose={() => {
-            setSubtaskModalVisible(false)
-            setSelectedSubtask(null)
-          }}
-          onStatusChange={handleSubtaskStatusChange}
-          onMarkReady={(subtask) => handleSubtaskStatusChange(subtask.id, 'ready_for_review')}
-        />
-      )}
-    </>
-  )
-}
-
-export default TaskCard
+export default TaskCard;

@@ -91,7 +91,7 @@ const SectionLabel = ({ icon, label, badge }) => (
 // ─── MemberChip ───────────────────────────────────────────────────────────────
 
 const MemberChip = ({ member, onRemove }) => {
-  const role = member.role
+  const role = member.role || member.pivot?.role || 'member'
   const color = ROLE_COLORS[role] || '#8a93a2'
   const userName = member.employee?.name || member.name || 'Unknown'
 
@@ -114,17 +114,19 @@ const MemberChip = ({ member, onRemove }) => {
       >
         {role}
       </span>
-      <button
-        onClick={() => onRemove(member.id)}
-        style={{
-          background: 'none', border: 'none', padding: 0,
-          cursor: 'pointer', color, opacity: 0.6, lineHeight: 1,
-          display: 'flex', alignItems: 'center',
-        }}
-        title="Remove member"
-      >
-        <CIcon icon={cilX} style={{ width: 10, height: 10 }} />
-      </button>
+      {onRemove && (
+        <button
+          onClick={() => onRemove(member.id)}
+          style={{
+            background: 'none', border: 'none', padding: 0,
+            cursor: 'pointer', color, opacity: 0.6, lineHeight: 1,
+            display: 'flex', alignItems: 'center',
+          }}
+          title="Remove member"
+        >
+          <CIcon icon={cilX} style={{ width: 10, height: 10 }} />
+        </button>
+      )}
     </div>
   )
 }
@@ -364,7 +366,12 @@ const AddMemberPanel = ({ projectId, currentMemberIds, onAdded }) => {
 
 // ─── CommentSection (with file attachments + error handling + file icons) ───
 
-const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
+const CommentSection = ({
+  projectId,
+  initialComments = [],
+  currentUser,
+  commentBasePath = '/api/admin/projects',
+}) => {
   const [comments, setComments] = useState(initialComments)
   const [body, setBody]         = useState('')
   const [sending, setSending]   = useState(false)
@@ -478,7 +485,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
     })
 
     try {
-      const res = await api.post(`/api/admin/projects/${projectId}/comments`, formData, {
+      const res = await api.post(`${commentBasePath}/${projectId}/comments`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       const saved = res.data?.data || res.data
@@ -500,7 +507,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
       setSending(false)
       textareaRef.current?.focus()
     }
-  }, [body, sending, projectId, currentUser, selectedFiles, clearErrors])
+  }, [body, sending, projectId, currentUser, selectedFiles, clearErrors, commentBasePath])
 
   const handleKeyDown = (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -631,7 +638,8 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
       <div
         className={`rounded-3 overflow-hidden ${dragActive ? 'border-primary border-2' : ''}`}
         style={{
-          border: dragActive ? '2px dashed var(--cui-primary)' : '1px solid var(--cui-border-color)',
+          border: dragActive ? '2px dashed var(--cui-primary)' : '1px solid var(--cui-border-color-translucent)',
+          background: 'var(--cui-tertiary-bg)',
           transition: 'border-color 0.2s',
         }}
         onDragEnter={handleDrag}
@@ -639,7 +647,7 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
         onDragLeave={handleDrag}
         onDrop={handleDrop}
       >
-        <textarea
+                <textarea
           ref={textareaRef}
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -649,14 +657,16 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
           style={{
             width: '100%', border: 'none', padding: '10px 12px',
             fontSize: 13, resize: 'none', outline: 'none',
-            background: 'var(--cui-body-bg)', color: 'var(--cui-body-color)', display: 'block',
+            background: 'var(--cui-tertiary-bg)',   // ← CHANGED THIS
+            color: 'var(--cui-text-color)', 
+            display: 'block',
           }}
         />
 
         {/* Bottom toolbar: attach button + send */}
-        <div
+         <div
           className="d-flex justify-content-between align-items-center px-2 py-1"
-          style={{ background: 'var(--cui-secondary-bg)', borderTop: '1px solid var(--cui-border-color-translucent)' }}
+          style={{ background: 'var(--cui-tertiary-bg)', borderTop: '1px solid var(--cui-border-color-translucent)' }}
         >
           <div className="d-flex gap-2 align-items-center">
             <button
@@ -735,7 +745,17 @@ const CommentSection = ({ projectId, initialComments = [], currentUser }) => {
 
 // ─── ProjectDrawer ────────────────────────────────────────────────────────────
 
-const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
+const ProjectDrawer = ({
+  visible,
+  project,
+  onClose,
+  onUpdate,
+  readOnly = false,
+  apiBasePath = '/api/admin/projects',
+  commentBasePath = '/api/admin/projects',
+  tasksPathBuilder = (item) => `/admin/projects/${item.id}/tasks`,
+  detailPathBuilder = (item) => `/admin/projects/${item.id}`,
+}) => {
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -751,7 +771,7 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
     setLoadingDetail(true)
     clearError()
     try {
-      const res = await api.get(`/api/admin/projects/${project.id}`)
+      const res = await api.get(`${apiBasePath}/${project.id}`)
       const data = res.data?.data
       if (!data) {
         throw new Error('Project detail data not found in response')
@@ -761,7 +781,7 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
       const message = err.response?.data?.message || err.message || 'Failed to load project details.'
       setError(message)
     } finally { setLoadingDetail(false) }
-  }, [project?.id, clearError])
+  }, [project?.id, clearError, apiBasePath])
 
   useEffect(() => {
     if (!visible || !project?.id) return
@@ -772,10 +792,11 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
   }, [visible, project?.id, fetchDetail])
 
   const handleUpdate = async (field, value) => {
+    if (readOnly) return
     clearError()
     try {
-      await api.patch(`/api/admin/projects/${project.id}`, { [field]: value })
-      onUpdate()
+      await api.patch(`${apiBasePath}/${project.id}`, { [field]: value })
+      onUpdate?.()
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Failed to update project.'
       setError(message)
@@ -783,13 +804,14 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
   }
 
   const handleRemoveMember = async (memberId) => {
+    if (readOnly) return
     clearError()
     try {
       await api.delete(`/api/admin/projects/${project.id}/members`, {
         data: { member_id: memberId },
       })
       fetchDetail()
-      onUpdate()
+      onUpdate?.()
     } catch (err) {
       const message = err.response?.data?.message || err.message || 'Failed to remove member.'
       setError(message)
@@ -823,13 +845,21 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
         {/* Start date */}
         <div>
           <CFormLabel className="small text-body-secondary text-uppercase fw-bold mb-1" style={{ letterSpacing: '0.05em', fontSize: 10 }}>Start Date</CFormLabel>
-          <CFormInput type="date" defaultValue={formatDate(project.start_date)} onBlur={(e) => handleUpdate('start_date', e.target.value)} />
+          {readOnly ? (
+            <div className="fw-semibold">{formatDate(project.start_date) || '-'}</div>
+          ) : (
+            <CFormInput type="date" defaultValue={formatDate(project.start_date)} onBlur={(e) => handleUpdate('start_date', e.target.value)} />
+          )}
         </div>
 
         {/* End date */}
         <div>
           <CFormLabel className="small text-body-secondary text-uppercase fw-bold mb-1" style={{ letterSpacing: '0.05em', fontSize: 10 }}>End Date</CFormLabel>
-          <CFormInput type="date" defaultValue={formatDate(project.end_date)} onBlur={(e) => handleUpdate('end_date', e.target.value)} />
+          {readOnly ? (
+            <div className="fw-semibold">{formatDate(project.end_date) || '-'}</div>
+          ) : (
+            <CFormInput type="date" defaultValue={formatDate(project.end_date)} onBlur={(e) => handleUpdate('end_date', e.target.value)} />
+          )}
         </div>
 
         {/* Team members */}
@@ -838,13 +868,15 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
             <CIcon icon={cilPeople} size="sm" className="text-primary" />
             <CFormLabel className="mb-0 fw-bold">Team Members</CFormLabel>
             <CBadge color="secondary">{members.length}</CBadge>
-            <div className="ms-auto">
-              <AddMemberPanel
-                projectId={project.id}
-                currentMemberIds={currentMemberIds}
-                onAdded={() => { fetchDetail(); onUpdate() }}
-              />
-            </div>
+            {!readOnly && (
+              <div className="ms-auto">
+                <AddMemberPanel
+                  projectId={project.id}
+                  currentMemberIds={currentMemberIds}
+                  onAdded={() => { fetchDetail(); onUpdate?.() }}
+                />
+              </div>
+            )}
           </div>
 
           {loadingDetail ? (
@@ -857,7 +889,7 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
                 <MemberChip
                   key={m.id}
                   member={m}
-                  onRemove={() => handleRemoveMember(m.employee_id || m.id)}
+                  onRemove={readOnly ? null : () => handleRemoveMember(m.employee_id || m.id)}
                 />
               ))}
             </div>
@@ -913,6 +945,7 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
             projectId={project.id}
             initialComments={comments}
             currentUser={user}
+            commentBasePath={commentBasePath}
           />
         )}
 
@@ -921,14 +954,23 @@ const ProjectDrawer = ({ visible, project, onClose, onUpdate }) => {
 
         {/* Footer actions */}
         <div className="d-flex flex-column gap-2 pb-2">
-          <CButton color="primary" className="w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            onClick={() => { onClose(); navigate(`/admin/projects/${project.id}/tasks`) }}>
-            <CIcon icon={cilTask} /> Manage Tasks
-          </CButton>
-          <CButton color="primary" variant="outline" className="w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
-            onClick={() => { onClose(); navigate(`/admin/projects/${project.id}`) }}>
-            <CIcon icon={cilArrowRight} /> View Team &amp; Tasks
-          </CButton>
+          {tasksPathBuilder && (
+            <CButton color="primary" className="w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+              onClick={() => { onClose(); navigate(tasksPathBuilder(project)) }}>
+              <CIcon icon={cilTask} /> {readOnly ? 'Open My Tasks' : 'Manage Tasks'}
+            </CButton>
+          )}
+          {detailPathBuilder && (
+            <CButton color="primary" variant="outline" className="w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+              onClick={() => { onClose(); navigate(detailPathBuilder(project)) }}>
+              <CIcon icon={cilArrowRight} /> View Team &amp; Tasks
+            </CButton>
+          )}
+          {!tasksPathBuilder && !detailPathBuilder && (
+            <CButton color="secondary" variant="outline" className="w-100 fw-semibold" onClick={onClose}>
+              Close
+            </CButton>
+          )}
         </div>
 
       </COffcanvasBody>

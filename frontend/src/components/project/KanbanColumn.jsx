@@ -1,89 +1,87 @@
-// components/project/KanbanColumn.jsx
-import React, { memo } from 'react'
-import { CBadge } from '@coreui/react'
+import React from 'react'
 import { useDroppable } from '@dnd-kit/core'
+import { CBadge } from '@coreui/react'
 import ProjectCard from './ProjectCard'
 
-const STATUS_COLUMNS = [
-  { key: 'todo',             label: 'To Do',            color: 'warning' },
-  { key: 'in_progress',      label: 'In Progress',      color: 'primary' },
-  { key: 'ready_for_review', label: 'Ready for Review', color: 'info'    },
-  { key: 'done',             label: 'Done',             color: 'success' },
-  { key: 'on_hold',          label: 'On Hold',          color: 'danger'  },
+export const STATUS_COLUMNS = [
+  { key: 'todo',          label: 'To Do',           color: 'warning'  },
+  { key: 'in_progress',      label: 'In Progress',     color: 'info'     },
+  { key: 'ready_for_review', label: 'Ready for Review', color: 'primary' },
+  { key: 'done',             label: 'Done',            color: 'success'  },
+  { key: 'on_hold',          label: 'On Hold',         color: 'danger'   },
 ]
 
-/**
- * KanbanColumn
- *
- * Wrapped in React.memo so a column only re-renders when its own `projects`
- * array reference changes — not when an unrelated column's cards are being
- * dragged.  The parent must keep per-column arrays stable (e.g. via useMemo)
- * so this optimisation actually fires.
- *
- * Props
- * ─────
- * col          – one entry from STATUS_COLUMNS
- * projects     – the subset of projects that belong to this column
- * onDelete     – stable callback (useCallback in parent) called after a delete
- * onCardClick  – stable callback (useCallback in parent) called when a card
- *                is clicked; receives the full project object
- */
-const KanbanColumn = memo(({ col, projects, onDelete, onCardClick }) => {
-  const { setNodeRef, isOver } = useDroppable({ id: col.key })
-
-  const columnStyle = {
-    flexShrink: 0,
-    width: 300,
-    minHeight: '600px',
-    borderRadius: '12px',
-    transition: 'all 0.25s ease',
-    backgroundColor: isOver ? 'rgba(50, 31, 219, 0.08)' : 'rgba(0,0,0,0.02)',
-    outline: isOver ? '2px dashed #321fdb' : '2px dashed transparent',
-    outlineOffset: '2px',
-    padding: '12px',
-  }
+const KanbanColumn = ({ col, projects = [], activeId, onDelete, onCardClick }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id: col.key,
+    data: { type: 'column', status: col.key },
+  })
 
   return (
-    <div ref={setNodeRef} style={columnStyle}>
+    <div
+      style={{
+        minWidth: 280,
+        maxWidth: 280,
+        display: 'flex',
+        flexDirection: 'column',
+        flexShrink: 0,
+      }}
+    >
       {/* Column header */}
       <div className="d-flex align-items-center justify-content-between mb-3 px-1">
-        <div className="d-flex align-items-center gap-2">
-          <CBadge
-            color={col.color}
-            shape="rounded-pill"
-            style={{ width: 8, height: 8, padding: 0 }}
-          />
-          <span className={`fw-bold small ${isOver ? 'text-primary' : ''}`}>
-            {col.label}
-          </span>
-        </div>
-        <CBadge color={col.color} variant="outline" shape="rounded-pill">
+        <span className="fw-semibold" style={{ fontSize: '0.88rem' }}>
+          {col.label}
+        </span>
+        <CBadge color={col.color} shape="rounded-pill">
           {projects.length}
         </CBadge>
       </div>
 
-      {/* Cards */}
-      <div className="d-flex flex-column gap-3">
-        {projects.map((p) => (
-          <ProjectCard
-            key={p.id}
-            project={p}
-            onDelete={onDelete}
-            onClick={onCardClick}
-          />
-        ))}
-
-        {isOver && projects.length === 0 && (
-          <div className="py-5 text-center text-primary small fw-bold border rounded-3 border-dashed">
-            Drop Here
+      {/* Drop area */}
+      <div
+        ref={setNodeRef}
+        style={{
+          flex: 1,
+          minHeight: 120,
+          borderRadius: 12,
+          padding: 4,
+          background: isOver ? 'var(--cui-tertiary-bg, rgba(0,0,0,0.03))' : 'transparent',
+          outline: isOver ? '2px dashed var(--cui-primary)' : '2px dashed transparent',
+          transition: 'background 0.15s ease, outline 0.15s ease',
+        }}
+      >
+        {projects.length === 0 ? (
+          <div
+            style={{
+              minHeight: 140,
+              border: '1px dashed var(--cui-border-color)',
+              borderRadius: 10,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--cui-secondary-color)',
+              fontSize: '0.7rem',
+              fontWeight: 700,
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Drop here
           </div>
+        ) : (
+          projects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              activeId={activeId}
+              onDelete={onDelete}
+              onClick={onCardClick}
+            />
+          ))
         )}
       </div>
     </div>
   )
-})
+}
 
-KanbanColumn.displayName = 'KanbanColumn'
-
-export { STATUS_COLUMNS }
 export default KanbanColumn

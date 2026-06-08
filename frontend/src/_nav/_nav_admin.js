@@ -40,20 +40,20 @@ const _nav = [
         name: 'Project Types',
         to: '/admin/project-types',
       },
-      {
-        component: CNavItem,
-        name: 'Task Templates',
-        to: '/admin/task-templates',
-      },
+      // {
+      //   component: CNavItem,
+      //   name: 'Task Templates',
+      //   to: '/admin/task-templates',
+      // },
     ],
   },
-  {
-    component: CNavItem,
-    name: 'Requests',
-    to: '/admin/requests',
-    icon: <CIcon icon={cilInbox} customClassName="nav-icon" />, // Changed from Square
-    badgeKey: 'requests',
-  },
+  // {
+  //   component: CNavItem,
+  //   name: 'Requests',
+  //   to: '/admin/requests',
+  //   icon: <CIcon icon={cilInbox} customClassName="nav-icon" />, // Changed from Square
+  //   badgeKey: 'requests',
+  // },
   {
     component: CNavItem,
     name: 'Tasks',

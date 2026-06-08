@@ -9,36 +9,44 @@ use RuntimeException;
 class AiEstimationService
 {
     public function estimate(Project $project): array
+{
+    $project->loadMissing('tasks');
+    $promptData = $this->buildPromptData($project);
+
+    // Comment out the try/catch temporarily to see the real error
+    // try {
+        $aiResult = $this->aiEstimate($project, $promptData);
+        return array_merge($aiResult, [
+            'data_sent_to_ai' => $promptData,
+            'source' => 'Groq AI'
+        ]);
+    // } catch (RuntimeException $e) {
+    //     return array_merge($this->localEstimate($project), [
+    //         'data_sent_to_ai' => $promptData,
+    //         'source' => 'Local Fallback Formula (AI Failed)'
+    //     ]);
+    // }
+}
+
+    protected function aiEstimate(Project $project, array $promptData): array
     {
-        $project->loadMissing('tasks');
-
-        try {
-            return $this->aiEstimate($project);
-        } catch (RuntimeException $e) {
-            return $this->localEstimate($project);
-        }
-    }
-
-    protected function aiEstimate(Project $project): array
-    {
-        $prompt = $this->buildPrompt($project);
-
-        $response = Http::timeout(30)
+        $response = Http::withoutVerifying()
+            ->timeout(30)
             ->withToken(config('services.groq.key'))
-            ->withHeaders(['Content-Type' => 'application/json'])
+            ->withHeaders(['Content-Type' => 'application/json']) // Crucial fix
             ->post('https://api.groq.com/openai/v1/chat/completions', [
                 'model' => 'llama-3.3-70b-versatile',
                 'messages' => [
                     [
                         'role' => 'system',
-                        'content' => 'You are a project estimation expert. Respond ONLY with valid JSON matching exactly this schema: {"estimated_days": int, "risk_level": "low" or "medium" or "high", "ai_comment": string}. No markdown, no code fences, no explanation, no extra fields.',
+                        'content' => 'You are a project estimation expert. Provide unique, organic project analysis. Respond ONLY with valid JSON matching exactly this schema: {"estimated_days": int, "risk_level": "low" or "medium" or "high", "ai_comment": string}. No markdown, no explanation, no static formulas.',
                     ],
                     [
                         'role' => 'user',
-                        'content' => 'Here is the project data: ' . $prompt,
+                        'content' => 'Here is the project data: ' . json_encode($promptData),
                     ],
                 ],
-                'temperature' => 0.2,
+                'temperature' => 0.7, // Increased from 0.2 to make answers dynamic and varied
                 'response_format' => ['type' => 'json_object'],
             ]);
 
@@ -82,11 +90,11 @@ class AiEstimationService
         return [
             'estimated_days' => $totalDays,
             'risk_level'     => $riskLevel,
-            'ai_comment'     => $comments[$riskLevel] . ' (local estimate — ' . $taskCount . ' tasks: ' . $highCount . ' high, ' . $mediumCount . ' medium priority)',
+            'ai_comment'     => $comments[$riskLevel] . ' (Fallback calculation — ' . $taskCount . ' tasks)',
         ];
     }
 
-    protected function buildPrompt(Project $project): string
+    protected function buildPromptData(Project $project): array
     {
         $taskSummaries = $project->tasks
             ->map(fn ($task) => [
@@ -97,7 +105,7 @@ class AiEstimationService
             ->values()
             ->all();
 
-        return json_encode([
+        return [
             'project' => [
                 'name'        => $project->name,
                 'description' => $project->description,
@@ -107,7 +115,7 @@ class AiEstimationService
             'task_count' => $project->tasks->count(),
             'task_types' => $project->tasks->pluck('priority')->filter()->unique()->values()->all(),
             'tasks'      => $taskSummaries,
-        ], JSON_THROW_ON_ERROR);
+        ];
     }
 
     protected function normalizeEstimate(string $outputText): array

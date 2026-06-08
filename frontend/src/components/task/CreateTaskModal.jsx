@@ -139,14 +139,14 @@ const CreateTaskModal = ({
                 ))}
               </CFormSelect>
             </CCol>
-            <CCol md={6}>
+            {/* <CCol md={6}>
               <CFormLabel className="fw-medium small">Status</CFormLabel>
               <CFormSelect name="status" value={form.status} onChange={handleChange}>
                 {TASK_COLUMNS.map(c => (
                   <option key={c.key} value={c.key}>{c.label}</option>
                 ))}
               </CFormSelect>
-            </CCol>
+            </CCol> */}
 
             {/* Due Date */}
             <CCol md={parentTask ? 12 : 6}>

@@ -9,7 +9,7 @@ export const useUpdateTaskStatus = () => {
     setUpdating(true)
     try {
       await taskApi.updateStatus(taskId, newStatus)
-      return { status: "todo" }
+      return { success: true }
     } catch (err) {
       console.error('Failed to update status:', err)
       return { success: false, error: err }

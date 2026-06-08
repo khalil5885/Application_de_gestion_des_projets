@@ -101,7 +101,7 @@ const RecursiveSubtaskTree = ({
                 )}
 
                 {/* Checkbox — stopPropagation so ticking doesn't open the detail modal */}
-                <CFormCheck
+                {/* <CFormCheck
                   checked={task.status === 'done'}
                   onChange={() => {
                     const newStatus = task.status === 'done' ? 'todo' : 'done'
@@ -109,7 +109,7 @@ const RecursiveSubtaskTree = ({
                   }}
                   onClick={(e) => e.stopPropagation()}
                   className="m-0"
-                />
+                /> */}
 
                 <PriorityDot priority={task.priority} size={6} />
 

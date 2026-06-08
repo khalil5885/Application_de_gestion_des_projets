@@ -6,11 +6,16 @@ import {
   CFormInput,
   CInputGroup,
   CInputGroupText,
+  CModal,
+  CModalBody,
+  CModalFooter,
+  CModalHeader,
+  CModalTitle,
   CSpinner,
   CTooltip,
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilFolder, cilGrid, cilList, cilPlus, cilSearch, cilTrash } from '@coreui/icons'
+import { cilFolder, cilGrid, cilList, cilPlus, cilSearch, cilTrash, cilWarning } from '@coreui/icons'
 
 import {
   closestCorners,
@@ -19,7 +24,6 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  useDroppable,
 } from '@dnd-kit/core'
 
 import { useAuth } from '../../../context/AuthContext'
@@ -31,55 +35,53 @@ import ProjectCard from '../../../components/project/ProjectCard'
 import CreateProjectModal from '../../../components/project/CreateProjectModal'
 import ProjectDrawer from '../../../components/project/ProjectDrawer'
 
-// ─── Fixed DeleteDropZone Component ──────────────────────────────────────────
-// Absolutely positioned overlay that only appears and takes space when dragging
-const DeleteDropZone = ({ isDragging }) => {
-  const { setNodeRef, isOver } = useDroppable({
-    id: 'delete-zone',
-    data: { type: 'delete' },
-  });
+// ─── Delete Confirmation Modal ────────────────────────────────────────────────
 
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        height: isDragging ? '90px' : 0,
-        marginBottom: 0,
-        background: isDragging
-          ? isOver
-            ? 'rgba(229, 83, 83, 0.18)'
-            : 'rgba(229, 83, 83, 0.06)'
-          : 'transparent',
-        borderBottom: isDragging
-          ? `2px dashed ${isOver ? '#e55353' : 'rgba(229,83,83,0.3)'}`
-          : 'none',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 12,
-        color: isDragging
-          ? isOver
-            ? '#e55353'
-            : 'rgba(229,83,83,0.5)'
-          : 'transparent',
-        fontWeight: 700,
-        fontSize: '0.85rem',
-        textTransform: 'uppercase',
-        transition: 'height 0.2s ease, background 0.2s ease, border 0.2s ease',
-        pointerEvents: isDragging ? 'auto' : 'none',
-        userSelect: 'none',
-        zIndex: 10,
-      }}
-    >
-      <CIcon icon={cilTrash} size="lg" style={{ transform: isOver ? 'scale(1.3)' : 'scale(1)' }} />
-      <span>Drop here to delete project</span>
-    </div>
-  );
-};
+const DeleteConfirmModal = ({ visible, projectName, onConfirm, onCancel, deleting }) => (
+  <CModal visible={visible} onClose={onCancel} alignment="center">
+    <CModalHeader onClose={onCancel}>
+      <CModalTitle className="d-flex align-items-center gap-2">
+        <span
+          style={{
+            width: 32, height: 32, borderRadius: 8,
+            background: 'rgba(229,83,83,0.12)',
+            border: '1px solid rgba(229,83,83,0.3)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
+          }}
+        >
+          <CIcon icon={cilWarning} style={{ color: '#e55353', width: 16, height: 16 }} />
+        </span>
+        Delete Project
+      </CModalTitle>
+    </CModalHeader>
+    <CModalBody>
+      <p className="mb-1">
+        Are you sure you want to delete{' '}
+        <strong>{projectName}</strong>?
+      </p>
+      <p className="text-body-secondary small mb-0">
+        This will permanently remove the project and all its tasks, members, and comments. This action cannot be undone.
+      </p>
+    </CModalBody>
+    <CModalFooter>
+      <CButton color="secondary" variant="ghost" onClick={onCancel} disabled={deleting}>
+        Cancel
+      </CButton>
+      <CButton
+        color="danger"
+        onClick={onConfirm}
+        disabled={deleting}
+        className="d-flex align-items-center gap-2"
+      >
+        {deleting
+          ? <><CSpinner size="sm" /> Deleting...</>
+          : <><CIcon icon={cilTrash} size="sm" /> Delete Project</>
+        }
+      </CButton>
+    </CModalFooter>
+  </CModal>
+)
 
 // ─── ProjectManagement ────────────────────────────────────────────────────────
 
@@ -87,27 +89,28 @@ const ProjectManagement = () => {
   const { user } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // ── Core state ─────────────────────────────────────────────────────────────
-  const [projects, setProjects] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [activeId, setActiveId] = useState(null)
-  const [viewMode, setViewMode] = useState('kanban')
+  // ── Core state ──────────────────────────────────────────────────────────────
+  const [projects, setProjects]           = useState([])
+  const [loading, setLoading]             = useState(true)
+  const [search, setSearch]               = useState('')
+  const [activeId, setActiveId]           = useState(null)
+  const [viewMode, setViewMode]           = useState('kanban')
   const [selectedProject, setSelectedProject] = useState(null)
-  const [showDrawer, setShowDrawer] = useState(false)
-  const [showCreate, setShowCreate] = useState(false)
-  const [deleteError, setDeleteError] = useState(null)
+  const [showDrawer, setShowDrawer]       = useState(false)
+  const [showCreate, setShowCreate]       = useState(false)
 
-  const [statusFilter, setStatusFilter] = useState(() => searchParams.get('status') || null)
-  const drawerOpenedFromUrl = useRef(false)
-  const kanbanContainerRef = useRef(null)
+  // ── Delete modal state ──────────────────────────────────────────────────────
+  const [deleteModal, setDeleteModal] = useState({ visible: false, projectId: null, projectName: '', deleting: false })
 
-  // ── DnD sensors ────────────────────────────────────────────────────────────
+  const [statusFilter, setStatusFilter]   = useState(() => searchParams.get('status') || null)
+  const drawerOpenedFromUrl               = useRef(false)
+
+  // ── DnD sensors ─────────────────────────────────────────────────────────────
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
   )
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // ── Fetch ────────────────────────────────────────────────────────────────────
   const fetchProjects = useCallback(async () => {
     setLoading(true)
     try {
@@ -124,7 +127,7 @@ const ProjectManagement = () => {
 
   useEffect(() => { fetchProjects() }, [fetchProjects])
 
-  // ── URL-based drawer auto-open ─────────────────────────────────────────────
+  // ── URL-based drawer auto-open ───────────────────────────────────────────────
   useEffect(() => {
     if (loading) return
     if (drawerOpenedFromUrl.current) return
@@ -139,7 +142,6 @@ const ProjectManagement = () => {
       setSelectedProject(found)
       setShowDrawer(true)
       drawerOpenedFromUrl.current = true
-
       setSearchParams((prev) => {
         const next = new URLSearchParams(prev)
         next.delete('projectId')
@@ -151,29 +153,24 @@ const ProjectManagement = () => {
 
   useEffect(() => {
     const hasParam = searchParams.has('projectId') || searchParams.has('open')
-    if (hasParam) {
-      drawerOpenedFromUrl.current = false
-    }
+    if (hasParam) drawerOpenedFromUrl.current = false
   }, [searchParams])
 
-  // ── Status filter ──────────────────────────────────────────────────────────
+  // ── Status filter ────────────────────────────────────────────────────────────
   const handleStatusFilterChange = useCallback((key) => {
     setStatusFilter((prev) => {
       const next = prev === key ? null : key
-      setSearchParams(
-        (prevParams) => {
-          const p = new URLSearchParams(prevParams)
-          if (next) p.set('status', next)
-          else p.delete('status')
-          return p
-        },
-        { replace: true },
-      )
+      setSearchParams((prevParams) => {
+        const p = new URLSearchParams(prevParams)
+        if (next) p.set('status', next)
+        else p.delete('status')
+        return p
+      }, { replace: true })
       return next
     })
   }, [setSearchParams])
 
-  // ── Drawer helpers ────────────────────────────────────────────────────────
+  // ── Drawer ───────────────────────────────────────────────────────────────────
   const handleCardClick = useCallback((project) => {
     setSelectedProject(project)
     setShowDrawer(true)
@@ -183,27 +180,34 @@ const ProjectManagement = () => {
     setShowDrawer(false)
   }, [])
 
-  // ── DELETE HANDLER ──────────────────────────────────────────────────────────
-  const handleDelete = useCallback(async (projectId) => {
-    if (!projectId) return
+  // ── Delete (with confirmation modal) ────────────────────────────────────────
+  const handleDeleteRequest = useCallback((projectId) => {
+    const project = projects.find((p) => p.id === projectId)
+    setDeleteModal({ visible: true, projectId, projectName: project?.name || 'this project', deleting: false })
+  }, [projects])
 
-    setDeleteError(null)
-
+  const handleDeleteConfirm = useCallback(async () => {
+    const { projectId } = deleteModal
+    setDeleteModal((prev) => ({ ...prev, deleting: true }))
     try {
       await api.delete(`/api/admin/projects/${projectId}`)
-      fetchProjects() // Refresh the list
+      setDeleteModal({ visible: false, projectId: null, projectName: '', deleting: false })
+      fetchProjects()
     } catch (err) {
       console.error('Failed to delete project:', err)
-      const message = err.response?.data?.message || err.message || 'Failed to delete project.'
-      setDeleteError(message)
-      setTimeout(() => setDeleteError(null), 5000)
+      setDeleteModal((prev) => ({ ...prev, deleting: false }))
     }
-  }, [fetchProjects])
+  }, [deleteModal, fetchProjects])
 
-  // ── DnD handlers ───────────────────────────────────────────────────────────
+  const handleDeleteCancel = useCallback(() => {
+    if (deleteModal.deleting) return
+    setDeleteModal({ visible: false, projectId: null, projectName: '', deleting: false })
+  }, [deleteModal.deleting])
+
+  // ── DnD handlers ─────────────────────────────────────────────────────────────
   const handleDragStart = useCallback((event) => {
+    // dnd-kit gives string IDs — store as-is, compare carefully
     setActiveId(event.active.id)
-    setDeleteError(null)
   }, [])
 
   const handleDragEnd = useCallback(async (event) => {
@@ -212,34 +216,39 @@ const ProjectManagement = () => {
 
     if (!over) return
 
-    const projectId = active.id
-    const targetId = over.id
+    // active.id is a string (dnd-kit converts IDs to strings)
+    // over.id is the column key string e.g. 'in_progress'
+    const draggedId   = active.id          // string
+    const newStatus   = over.id            // column key string
 
-    // If dropped on delete zone
-    if (targetId === 'delete-zone') {
-      await handleDelete(projectId)
-      return
-    }
+    // Validate that over.id is actually a column key, not another card
+    const isColumn = STATUS_COLUMNS.some((col) => col.key === newStatus)
+    if (!isColumn) return
 
-    // If dropped on same column, do nothing
-    if (projectId === targetId) return
+    // Find the project by comparing string IDs
+    const project = projects.find((p) => String(p.id) === String(draggedId))
+    if (!project) return
 
-    // Otherwise it's a status change
+    // No-op if same status
+    if (project.status === newStatus) return
+
+    // Optimistic update
     setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, status: targetId } : p)),
+      prev.map((p) => String(p.id) === String(draggedId) ? { ...p, status: newStatus } : p)
     )
 
     try {
-      await api.patch(`/api/admin/projects/${projectId}`, { status: targetId })
-    } catch {
-      fetchProjects()
+      await api.patch(`/api/admin/projects/${project.id}`, { status: newStatus })
+    } catch (err) {
+      console.error('Failed to update project status:', err)
+      fetchProjects() // roll back on error
     }
-  }, [fetchProjects, handleDelete])
+  }, [projects, fetchProjects])
 
-  // ── Table status change ────────────────────────────────────────────────────
+  // ── Table status change ───────────────────────────────────────────────────────
   const handleStatusChange = useCallback(async (projectId, newStatus) => {
     setProjects((prev) =>
-      prev.map((p) => (p.id === projectId ? { ...p, status: newStatus } : p)),
+      prev.map((p) => p.id === projectId ? { ...p, status: newStatus } : p)
     )
     try {
       await api.patch(`/api/admin/projects/${projectId}`, { status: newStatus })
@@ -248,7 +257,7 @@ const ProjectManagement = () => {
     }
   }, [fetchProjects])
 
-  // ── Per-column project slices ─────────────────────────────────────────────
+  // ── Per-column slices ─────────────────────────────────────────────────────────
   const kanbanSlices = useMemo(() => {
     const searchTerm = search.toLowerCase()
     const result = {}
@@ -264,16 +273,16 @@ const ProjectManagement = () => {
     return result
   }, [projects, search])
 
-  // ── Active drag overlay project ────────────────────────────────────────────
+  // ── Active drag project (for overlay) ────────────────────────────────────────
   const activeDragProject = useMemo(
-    () => (activeId ? projects.find((p) => p.id === activeId) : null),
+    () => activeId ? projects.find((p) => String(p.id) === String(activeId)) : null,
     [activeId, projects],
   )
 
-  // ── Guard ──────────────────────────────────────────────────────────────────
+  // ── Guard ─────────────────────────────────────────────────────────────────────
   if (user && user.global_role !== 'admin') return <Navigate to="/dashboard" replace />
 
-  // ── Render ─────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <>
       {/* Header */}
@@ -284,7 +293,6 @@ const ProjectManagement = () => {
         </h4>
 
         <div className="d-flex align-items-center gap-3">
-          {/* View toggle */}
           <div
             className="d-flex align-items-center p-1 rounded-3"
             style={{
@@ -327,24 +335,8 @@ const ProjectManagement = () => {
         </div>
       </div>
 
-      {/* Delete error toast */}
-      {deleteError && (
-        <div
-          className="rounded-3 px-4 py-3 mb-3 d-flex align-items-center gap-2"
-          style={{
-            background: 'rgba(229,83,83,0.1)',
-            border: '1px solid rgba(229,83,83,0.3)',
-            color: '#e55353',
-            fontSize: 14,
-          }}
-        >
-          <CIcon icon={cilTrash} size="sm" />
-          <span>{deleteError}</span>
-        </div>
-      )}
-
       {/* Search + quick filters */}
-      <div className="mb-4 d-flex align-items-center gap-3">
+      <div className="mb-4 d-flex align-items-center gap-3 flex-wrap">
         <CInputGroup style={{ maxWidth: 400 }}>
           <CInputGroupText className="bg-transparent border-end-0">
             <CIcon icon={cilSearch} />
@@ -357,9 +349,9 @@ const ProjectManagement = () => {
           />
         </CInputGroup>
 
-        <div className="d-flex gap-2">
+        <div className="d-flex gap-2 flex-wrap">
           {STATUS_COLUMNS.map((col) => {
-            const count = projects.filter((p) => p.status === col.key).length
+            const count    = projects.filter((p) => p.status === col.key).length
             const isActive = statusFilter === col.key
             return (
               <CButton
@@ -372,11 +364,7 @@ const ProjectManagement = () => {
               >
                 <span
                   className="d-inline-block rounded-circle"
-                  style={{
-                    width: 8,
-                    height: 8,
-                    backgroundColor: `var(--cui-${col.color})`,
-                  }}
+                  style={{ width: 8, height: 8, backgroundColor: `var(--cui-${col.color})` }}
                 />
                 <span className={`small ${isActive ? 'text-white' : 'text-muted'}`}>
                   {col.label}
@@ -396,67 +384,48 @@ const ProjectManagement = () => {
           <CSpinner color="primary" />
         </div>
       ) : viewMode === 'kanban' ? (
-          <DndContext
-    sensors={sensors}
-    collisionDetection={closestCorners}
-    onDragStart={handleDragStart}
-    onDragEnd={handleDragEnd}
-  >
-    <div
-      className="d-flex gap-3 pb-4"
-      style={{
-        position: 'relative',
-        overflowX: 'auto',
-        minHeight: '200px',
-      }}
-    >
-      <DeleteDropZone isDragging={!!activeId} />
-
-      <div
-        className="d-flex gap-3"
-        style={{
-          paddingTop: activeId ? '150px' : 0, // match dropzone height (150px)
-          transition: 'padding-top 0.2s ease',
-          flex: 1,
-        }}
-      >
-        {STATUS_COLUMNS.filter(
-          (col) => !statusFilter || col.key === statusFilter
-        ).map((col) => (
-          <KanbanColumn
-            key={col.key}
-            col={col}
-            projects={kanbanSlices[col.key]}
-            onDelete={handleDelete}
-            onCardClick={handleCardClick}
-          />
-        ))}
-      </div>
-    </div>
-
-    <DragOverlay>
-      {activeDragProject ? (
-        <div
-          style={{
-            transform: 'rotate(-4deg)',
-            cursor: 'grabbing',
-            width: 280,
-          }}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCorners}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
         >
-          <ProjectCard
-            project={activeDragProject}
-            onDelete={() => {}}
-            onClick={() => {}}
-          />
-        </div>
-      ) : null}
-    </DragOverlay>
-  </DndContext>
+          <div
+            className="d-flex gap-3 pb-4"
+            style={{ overflowX: 'auto', minHeight: 200 }}
+          >
+            {STATUS_COLUMNS.filter(
+              (col) => !statusFilter || col.key === statusFilter,
+            ).map((col) => (
+              <KanbanColumn
+                key={col.key}
+                col={col}
+                projects={kanbanSlices[col.key]}
+                activeId={activeId}
+                onDelete={handleDeleteRequest}
+                onCardClick={handleCardClick}
+              />
+            ))}
+          </div>
 
+          {/* DragOverlay — renders a ghost of the card being dragged */}
+          <DragOverlay dropAnimation={null}>
+            {activeDragProject ? (
+              <div style={{ width: 280, cursor: 'grabbing', transform: 'rotate(-1.5deg)', pointerEvents: 'none' }}>
+                <ProjectCard
+                  project={activeDragProject}
+                  onDelete={() => {}}
+                  onClick={() => {}}
+                  isDragOverlay
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
       ) : (
         <ProjectTableView
           projects={projects}
-          onDelete={handleDelete}
+          onDelete={handleDeleteRequest}
           onCardClick={handleCardClick}
           onStatusChange={handleStatusChange}
           search={search}
@@ -464,12 +433,21 @@ const ProjectManagement = () => {
         />
       )}
 
-      {/* Modals / Drawer */}
+      {/* Modals */}
+      <DeleteConfirmModal
+        visible={deleteModal.visible}
+        projectName={deleteModal.projectName}
+        onConfirm={handleDeleteConfirm}
+        onCancel={handleDeleteCancel}
+        deleting={deleteModal.deleting}
+      />
+
       <CreateProjectModal
         visible={showCreate}
         onClose={() => setShowCreate(false)}
         onCreated={fetchProjects}
       />
+
       <ProjectDrawer
         visible={showDrawer}
         project={selectedProject}

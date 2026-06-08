@@ -70,7 +70,7 @@ class TaskController extends Controller
                 ActivityLog::record($user, 'task_ready_for_review', $task, 'Employee marked task ready for review.');
 
                 // Create task review request
-                $this->createTaskReviewRequest($task, $user);
+                // $this->createTaskReviewRequest($task, $user);
 
                 // Check if project should auto-advance
                 $this->maybeAdvanceProject($task->project);
@@ -199,22 +199,23 @@ class TaskController extends Controller
             }
 
             $response = Http::timeout(30)
-                ->withToken(config('services.groq.key'))
-                ->post('https://api.groq.com/openai/v1/chat/completions', [
-                    'model' => 'llama-3.3-70b-versatile',
-                    'messages' => [
-                        [
-                            'role' => 'system',
-                            'content' => 'You are a productivity expert. Given a list of tasks, return ONLY a valid JSON object with a single key "order" containing an array. Each item must have "id" (int) and "reason" (string). No markdown, no extra text.',
-                        ],
-                        [
-                            'role' => 'user',
-                            'content' => 'Order these tasks by priority: ' . $tasks->toJson(),
-                        ],
-                    ],
-                    'temperature' => 0.3,
-                    'response_format' => ['type' => 'json_object'],
-                ]);
+    ->withToken(config('services.groq.key'))
+    ->withHeaders(['Content-Type' => 'application/json']) // Add this line
+    ->post('https://api.groq.com/openai/v1/chat/completions', [
+        'model' => 'llama-3.3-70b-versatile',
+        'messages' => [
+            [
+                'role' => 'system',
+                'content' => 'You are a productivity expert. Given a list of tasks, return ONLY a valid JSON object with a single key "order" containing an array. Each item must have "id" (int) and "reason" (string). No markdown, no extra text.',
+            ],
+            [
+                'role' => 'user',
+                'content' => 'Order these tasks by priority: ' . $tasks->toJson(),
+            ],
+        ],
+        'temperature' => 0.3,
+        'response_format' => ['type' => 'json_object'],
+    ]);
 
             if ($response->failed()) {
                 return $this->successResponse(
@@ -238,4 +239,17 @@ class TaskController extends Controller
             return $this->successResponse($decoded['order'], 'Task order suggested successfully.');
         });
     }
+    public function show(Task $task)
+{
+    return $this->handle(function () use ($task) {
+        abort_unless($task->assigned_to === request()->user()->id, 403, 'You are not assigned to this task.');
+
+        $task->load(['children.assignee', 'children.children', 'assignee', 'project', 'parent']);
+
+        return $this->successResponse(
+            TaskResource::make($task),
+            'Task retrieved successfully.'
+        );
+    });
+}
 }

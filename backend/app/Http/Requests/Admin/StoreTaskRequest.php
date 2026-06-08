@@ -19,7 +19,7 @@ class StoreTaskRequest extends FormRequest
             'parent_id' => ['nullable', 'exists:tasks,id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
-            'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'ready_for_review', 'done', 'on_hold'])],
+            // 'status' => ['sometimes', Rule::in(['todo', 'in_progress', 'ready_for_review', 'done', 'on_hold'])],
             'priority' => ['sometimes', Rule::in(['low', 'medium', 'high', 'urgent'])],
             'due_date' => ['nullable', 'date'],
             'assigned_to' => ['nullable', 'exists:users,id'],

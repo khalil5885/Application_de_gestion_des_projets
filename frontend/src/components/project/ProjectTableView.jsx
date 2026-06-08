@@ -38,17 +38,17 @@ import {
 // ─── Shared config ────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  todo:             { label: 'To Do',            color: 'warning', bg: 'rgba(255,193,7,0.12)',   text: '#d39e00' },
-  in_progress:      { label: 'In Progress',      color: 'primary', bg: 'rgba(50,31,219,0.12)',   text: '#321fdb' },
-  ready_for_review: { label: 'Ready for Review', color: 'info',    bg: 'rgba(13,202,240,0.12)',  text: '#0dcaf0' },
-  done:             { label: 'Done',             color: 'success', bg: 'rgba(46,184,92,0.12)',   text: '#2eb85c' },
-  on_hold:          { label: 'On Hold',          color: 'danger',  bg: 'rgba(229,83,83,0.12)',   text: '#e55353' },
+  todo: { label: 'To Do', color: 'warning', bg: 'rgba(255,193,7,0.12)', text: '#d39e00' },
+  in_progress: { label: 'In Progress', color: 'primary', bg: 'rgba(50,31,219,0.12)', text: '#321fdb' },
+  ready_for_review: { label: 'Ready for Review', color: 'info', bg: 'rgba(13,202,240,0.12)', text: '#0dcaf0' },
+  done: { label: 'Done', color: 'success', bg: 'rgba(46,184,92,0.12)', text: '#2eb85c' },
+  on_hold: { label: 'On Hold', color: 'danger', bg: 'rgba(229,83,83,0.12)', text: '#e55353' },
 }
 
 const PRIORITY_CONFIG = {
-  high:   { label: 'High',   color: 'danger',  dot: '#e55353' },
+  high: { label: 'High', color: 'danger', dot: '#e55353' },
   medium: { label: 'Medium', color: 'warning', dot: '#f9b115' },
-  low:    { label: 'Low',    color: 'info',    dot: '#39f'    },
+  low: { label: 'Low', color: 'info', dot: '#39f' },
 }
 
 // ─── Pure helpers (defined outside component so they are never re-created) ────
@@ -119,11 +119,17 @@ const ProjectTableView = memo(({
   onStatusChange,
   search,
   statusFilter,
+  readOnly = false,
+  selectable = true,
+  showActions = true,
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' })
   const [selectedRows, setSelectedRows] = useState(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 10
+  const canSelect = selectable && !readOnly
+  const canChangeStatus = !readOnly && typeof onStatusChange === 'function'
+  const canDelete = !readOnly && typeof onDelete === 'function'
 
   // Reset to page 1 whenever the external filter changes
   useEffect(() => { setCurrentPage(1) }, [search, statusFilter])
@@ -218,14 +224,14 @@ const ProjectTableView = memo(({
             </strong>{' '}
             of <strong>{sortedProjects.length}</strong> projects
           </span>
-          {selectedRows.size > 0 && (
+          {canSelect && selectedRows.size > 0 && (
             <CBadge color="primary" shape="rounded-pill">
               {selectedRows.size} selected
             </CBadge>
           )}
         </div>
 
-        {selectedRows.size > 0 && (
+        {canDelete && selectedRows.size > 0 && (
           <CButton color="danger" size="sm" variant="outline">
             <CIcon icon={cilTrash} className="me-1" size="sm" />
             Delete Selected
@@ -234,20 +240,25 @@ const ProjectTableView = memo(({
       </div>
 
       {/* Table */}
-      <div className="table-responsive rounded-3 border" style={{ background: '#fff' }}>
+      <div
+        className="table-responsive rounded-3 border"
+        style={{ background: 'var(--cui-body-bg)', borderColor: 'var(--cui-border-color)' }}
+      >
         <CTable hover className="mb-0 align-middle" style={{ fontSize: '0.875rem' }}>
           <CTableHead>
-            <CTableRow style={{ background: 'rgba(0,0,0,0.02)' }}>
+            <CTableRow style={{ background: 'var(--cui-tertiary-bg)' }}>
               {/* Checkbox */}
-              <CTableHeaderCell className="ps-4" style={{ width: 40 }}>
-                <CFormCheck
-                  checked={
-                    selectedRows.size === paginatedProjects.length &&
-                    paginatedProjects.length > 0
-                  }
-                  onChange={toggleSelectAll}
-                />
-              </CTableHeaderCell>
+              {canSelect && (
+                <CTableHeaderCell className="ps-4" style={{ width: 40 }}>
+                  <CFormCheck
+                    checked={
+                      selectedRows.size === paginatedProjects.length &&
+                      paginatedProjects.length > 0
+                    }
+                    onChange={toggleSelectAll}
+                  />
+                </CTableHeaderCell>
+              )}
 
               {/* Project name */}
               <CTableHeaderCell
@@ -328,26 +339,32 @@ const ProjectTableView = memo(({
               </CTableHeaderCell>
 
               {/* Actions */}
-              <CTableHeaderCell className="text-end pe-4" style={{ width: 60 }}>
-                <span className="fw-semibold text-uppercase small text-muted">Actions</span>
-              </CTableHeaderCell>
+              {showActions && (
+                <CTableHeaderCell className="text-end pe-4" style={{ width: 60 }}>
+                  <span className="fw-semibold text-uppercase small text-muted">Actions</span>
+                </CTableHeaderCell>
+              )}
             </CTableRow>
           </CTableHead>
 
           <CTableBody>
             {paginatedProjects.length === 0 ? (
               <CTableRow>
-                <CTableDataCell colSpan={9} className="text-center py-5 text-muted">
+                <CTableDataCell
+                  colSpan={7 + (canSelect ? 1 : 0) + (showActions ? 1 : 0)}
+                  className="text-center py-5 text-muted"
+                >
                   <CIcon icon={cilFolder} size="xl" className="mb-2 opacity-25" />
                   <div>No projects found</div>
                 </CTableDataCell>
               </CTableRow>
             ) : (
               paginatedProjects.map((project) => {
-                const status   = STATUS_CONFIG[project.status]   || STATUS_CONFIG.todo
+                const status = STATUS_CONFIG[project.status] || STATUS_CONFIG.todo
                 const priority = PRIORITY_CONFIG[project.priority] || PRIORITY_CONFIG.medium
                 const isSelected = selectedRows.has(project.id)
-                const progress   = project.progress || 0
+                const progress = project.progress || 0
+                const deadline = project.deadline || project.end_date
 
                 return (
                   <CTableRow
@@ -356,12 +373,14 @@ const ProjectTableView = memo(({
                     style={{ transition: 'all 0.15s ease' }}
                   >
                     {/* Checkbox */}
-                    <CTableDataCell className="ps-4">
-                      <CFormCheck
-                        checked={isSelected}
-                        onChange={() => toggleRow(project.id)}
-                      />
-                    </CTableDataCell>
+                    {canSelect && (
+                      <CTableDataCell className="ps-4">
+                        <CFormCheck
+                          checked={isSelected}
+                          onChange={() => toggleRow(project.id)}
+                        />
+                      </CTableDataCell>
+                    )}
 
                     {/* Project name + description + tags */}
                     <CTableDataCell>
@@ -370,7 +389,7 @@ const ProjectTableView = memo(({
                         style={{ cursor: 'pointer' }}
                         onClick={() => onCardClick(project)}
                       >
-                        <span className="fw-semibold text-dark">{project.name}</span>
+                        <span className="fw-semibold text-body">{project.name}</span>
                         <span
                           className="small text-muted text-truncate"
                           style={{ maxWidth: 250 }}
@@ -420,43 +439,60 @@ const ProjectTableView = memo(({
 
                     {/* Status dropdown */}
                     <CTableDataCell>
-                      <CDropdown>
-                        <CDropdownToggle
-                          color="secondary"
-                          variant="ghost"
-                          className="p-0 border-0 shadow-none d-flex align-items-center gap-2"
-                        >
-                          <span
-                            className="d-inline-flex align-items-center gap-2 px-2 py-1 rounded-pill small fw-medium"
-                            style={{
-                              backgroundColor: status.bg,
-                              color: status.text,
-                              border: `1px solid ${status.text}30`,
-                            }}
+                      {canChangeStatus ? (
+                        <CDropdown>
+                          <CDropdownToggle
+                            color="secondary"
+                            variant="ghost"
+                            className="p-0 border-0 shadow-none d-flex align-items-center gap-2"
                           >
                             <span
-                              className="d-inline-block rounded-circle"
-                              style={{ width: 6, height: 6, backgroundColor: status.text }}
-                            />
-                            {status.label}
-                          </span>
-                        </CDropdownToggle>
-                        <CDropdownMenu>
-                          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                            <CDropdownItem
-                              key={key}
-                              onClick={() => onStatusChange(project.id, key)}
-                              className="d-flex align-items-center gap-2"
+                              className="d-inline-flex align-items-center gap-2 px-2 py-1 rounded-pill small fw-medium"
+                              style={{
+                                backgroundColor: status.bg,
+                                color: status.text,
+                                border: `1px solid ${status.text}30`,
+                              }}
                             >
                               <span
                                 className="d-inline-block rounded-circle"
-                                style={{ width: 8, height: 8, backgroundColor: cfg.text }}
+                                style={{ width: 6, height: 6, backgroundColor: status.text }}
                               />
-                              {cfg.label}
-                            </CDropdownItem>
-                          ))}
-                        </CDropdownMenu>
-                      </CDropdown>
+                              {status.label}
+                            </span>
+                          </CDropdownToggle>
+                          <CDropdownMenu>
+                            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                              <CDropdownItem
+                                key={key}
+                                onClick={() => onStatusChange(project.id, key)}
+                                className="d-flex align-items-center gap-2"
+                              >
+                                <span
+                                  className="d-inline-block rounded-circle"
+                                  style={{ width: 8, height: 8, backgroundColor: cfg.text }}
+                                />
+                                {cfg.label}
+                              </CDropdownItem>
+                            ))}
+                          </CDropdownMenu>
+                        </CDropdown>
+                      ) : (
+                        <span
+                          className="d-inline-flex align-items-center gap-2 px-2 py-1 rounded-pill small fw-medium"
+                          style={{
+                            backgroundColor: status.bg,
+                            color: status.text,
+                            border: `1px solid ${status.text}30`,
+                          }}
+                        >
+                          <span
+                            className="d-inline-block rounded-circle"
+                            style={{ width: 6, height: 6, backgroundColor: status.text }}
+                          />
+                          {status.label}
+                        </span>
+                      )}
                     </CTableDataCell>
 
                     {/* Priority */}
@@ -496,9 +532,9 @@ const ProjectTableView = memo(({
                     {/* Deadline */}
                     <CTableDataCell>
                       <div className="d-flex flex-column">
-                        <span className="small fw-medium">{formatDate(project.deadline)}</span>
-                        {project.deadline &&
-                          new Date(project.deadline) < new Date() &&
+                        <span className="small fw-medium">{formatDate(deadline)}</span>
+                        {deadline &&
+                          new Date(deadline) < new Date() &&
                           project.status !== 'done' && (
                             <CBadge
                               color="danger"
@@ -513,33 +549,39 @@ const ProjectTableView = memo(({
                     </CTableDataCell>
 
                     {/* Actions */}
-                    <CTableDataCell className="text-end pe-4">
-                      <CDropdown alignment="end">
-                        <CDropdownToggle
-                          color="transparent"
-                          className="p-1 border-0 shadow-none"
-                        >
-                          <CIcon icon={cilOptions} />
-                        </CDropdownToggle>
-                        <CDropdownMenu>
-                          <CDropdownItem onClick={() => onCardClick(project)}>
-                            <CIcon icon={cilZoom} className="me-2" size="sm" />
-                            View Details
-                          </CDropdownItem>
-                          <CDropdownItem>
-                            <CIcon icon={cilPencil} className="me-2" size="sm" />
-                            Edit Project
-                          </CDropdownItem>
-                          <CDropdownItem
-                            className="text-danger"
-                            onClick={() => onDelete(project.id)}
+                    {showActions && (
+                      <CTableDataCell className="text-end pe-4">
+                        <CDropdown alignment="end">
+                          <CDropdownToggle
+                            color="transparent"
+                            className="p-1 border-0 shadow-none"
                           >
-                            <CIcon icon={cilTrash} className="me-2" size="sm" />
-                            Delete
-                          </CDropdownItem>
-                        </CDropdownMenu>
-                      </CDropdown>
-                    </CTableDataCell>
+                            <CIcon icon={cilOptions} />
+                          </CDropdownToggle>
+                          <CDropdownMenu>
+                            <CDropdownItem onClick={() => onCardClick(project)}>
+                              <CIcon icon={cilZoom} className="me-2" size="sm" />
+                              View Details
+                            </CDropdownItem>
+                            {!readOnly && (
+                              <CDropdownItem>
+                                <CIcon icon={cilPencil} className="me-2" size="sm" />
+                                Edit Project
+                              </CDropdownItem>
+                            )}
+                            {canDelete && (
+                              <CDropdownItem
+                                className="text-danger"
+                                onClick={() => onDelete(project.id)}
+                              >
+                                <CIcon icon={cilTrash} className="me-2" size="sm" />
+                                Delete
+                              </CDropdownItem>
+                            )}
+                          </CDropdownMenu>
+                        </CDropdown>
+                      </CTableDataCell>
+                    )}
                   </CTableRow>
                 )
               })

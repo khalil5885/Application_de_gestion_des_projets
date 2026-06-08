@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { useLocation } from 'react-router-dom' 
+import { useLocation } from 'react-router-dom'
 import {
   CCard,
   CCardBody,
@@ -91,7 +91,7 @@ function useDebounce(value, delay) {
 // ─── MAIN COMPONENT ──────────────────────────────────────────────
 const TasksOverview = () => {
   // ── State ─────────────────────────────────────────────────────
-  
+
   const [tasks, setTasks] = useState([])
   const [users, setUsers] = useState([])
   const [projects, setProjects] = useState([])
@@ -135,11 +135,11 @@ const TasksOverview = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       if (location.state?.openTaskId) {
-      setSelectedTaskId(location.state.openTaskId)
-      setSidebarVisible(true)
-      window.history.replaceState({}, document.title)
-    }
-  
+        setSelectedTaskId(location.state.openTaskId)
+        setSidebarVisible(true)
+        window.history.replaceState({}, document.title)
+      }
+
       try {
         const res = await api.get('/api/admin/users')
         if (res.data?.status === 'success') {
@@ -272,7 +272,7 @@ const TasksOverview = () => {
     const data = Object.values(counts)
     const colors = Object.keys(counts).map((s) => {
       const map = { secondary: '#6c757d', primary: '#0d6efd', warning: '#ffc107', success: '#198754', dark: '#212529' }
-      return map[STATUS_CONFIG[s]?.color] || '#6c757d'
+      return map[STATUS_CONFIG[s]?.color] || '#495057'
     })
     return {
       labels,
@@ -454,20 +454,27 @@ const TasksOverview = () => {
               </CCol>
 
               {/* Status Multi-select (visual chips) */}
-              <CCol md={8} lg={9}>
+                           <CCol md={8} lg={9}>
                 <div className="d-flex flex-wrap gap-2">
-                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                    <CButton
-                      key={key}
-                      color={filters.status.includes(key) ? cfg.color : 'light'}
-                      size="sm"
-                      variant={filters.status.includes(key) ? undefined : 'outline'}
-                      onClick={() => handleStatusToggle(key)}
-                      className="text-nowrap"
-                    >
-                      {cfg.label}
-                    </CButton>
-                  ))}
+                  {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+                    const isActive = filters.status.includes(key)
+                    return (
+                      <CButton
+                        key={key}
+                        color={isActive ? cfg.color : 'secondary'}
+                        size="sm"
+                        variant={isActive ? undefined : 'outline'}
+                        onClick={() => handleStatusToggle(key)}
+                        className="text-nowrap"
+                        style={!isActive ? { 
+                          '--cui-btn-color': 'var(--cui-secondary-color)',
+                          borderColor: 'var(--cui-border-color)',
+                        } : undefined}
+                      >
+                        {cfg.label}
+                      </CButton>
+                    )
+                  })}
                 </div>
               </CCol>
 
@@ -617,8 +624,8 @@ const TasksOverview = () => {
                     const health = getTaskHealth(task)
                     const healthCfg = HEALTH_CONFIG[health]
                     return (
-                      <CTableRow 
-                        key={task.id} 
+                      <CTableRow
+                        key={task.id}
                         onClick={() => handleTaskClick(task.id)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -643,7 +650,7 @@ const TasksOverview = () => {
                         </CTableDataCell>
                         <CTableDataCell>
                           <span className="small">{task.project?.client?.name || '—'}</span>
-                          </CTableDataCell>
+                        </CTableDataCell>
                         <CTableDataCell>
                           <CBadge color={STATUS_CONFIG[task.status]?.color || 'secondary'}>
                             {STATUS_CONFIG[task.status]?.label || task.status}
@@ -671,9 +678,9 @@ const TasksOverview = () => {
                           </CBadge>
                         </CTableDataCell>
                         <CTableDataCell className="text-end">
-                          <CButton 
-                            color="light" 
-                            size="sm" 
+                          <CButton
+                            color="light"
+                            size="sm"
                             variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation()
